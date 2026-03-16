@@ -8,6 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Geolocation } from "@capacitor/geolocation";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const COURSES = [
   "CSC 301 - Data Structures",
@@ -18,6 +22,8 @@ const COURSES = [
 const CreateSession = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
+  
   const [form, setForm] = useState({
     level: "",
     semester: "",
@@ -29,17 +35,79 @@ const CreateSession = () => {
     bleVerification: true,
   });
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!form.level || !form.semester) {
+        setCourses([]);
+        return;
+      }
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("level", form.level)
+        .eq("semester", form.semester)
+        .eq("department", "Electronic and Computer Engineering");
+      
+      if (data) setCourses(data);
+      setLoading(false);
+    };
+    fetchCourses();
+  }, [form.level, form.semester]);
+
   const updateForm = (key: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
+    if (!form.course) return;
     setLoading(true);
-    // Simulate session creation
-    setTimeout(() => {
-      toast.success("Session launched! BLE advertising started.");
-      navigate("/lecturer/session/new-session");
-    }, 1000);
+    
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error("Not authenticated");
+
+      // 1. Capture Location
+      let lat = null;
+      let lng = null;
+      if (form.gpsVerification) {
+        const position = await Geolocation.getCurrentPosition();
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      }
+
+      // 2. Generate BLE Token
+      const bleToken = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      // 3. Create Session in DB
+      const { data, error } = await supabase.from("attendance_sessions").insert({
+        course_id: form.course,
+        lecturer_id: user.id,
+        day_number: parseInt(form.dayNumber) || 1,
+        topic: form.topic,
+        verification_rules: {
+          face: form.faceVerification,
+          gps: form.gpsVerification,
+          ble: form.bleVerification,
+        },
+        ble_token: bleToken,
+        lecturer_lat: lat,
+        lecturer_lng: lng,
+        geo_radius_meters: 50,
+        status: "active"
+      }).select().single();
+
+      if (error) throw error;
+
+      await Haptics.notification({ type: ImpactStyle.Heavy as any });
+      toast.success("Session launched! Students can now join.");
+      navigate(`/lecturer/session/${data.id}`);
+    } catch (error: any) {
+      console.error("Launch error:", error);
+      toast.error(error.message || "Failed to launch session");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,8 +143,8 @@ const CreateSession = () => {
               <Select value={form.semester} onValueChange={(v) => updateForm("semester", v)}>
                 <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Sem" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1st">1st Semester</SelectItem>
-                  <SelectItem value="2nd">2nd Semester</SelectItem>
+                  <SelectItem value="1st Semester">1st Semester</SelectItem>
+                  <SelectItem value="2nd Semester">2nd Semester</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -87,7 +155,15 @@ const CreateSession = () => {
             <Select value={form.course} onValueChange={(v) => updateForm("course", v)}>
               <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Select course" /></SelectTrigger>
               <SelectContent>
-                {COURSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {courses.length === 0 ? (
+                  <SelectItem value="none" disabled>No courses available</SelectItem>
+                ) : (
+                  courses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.agent
+android/
+ios/
+android/app/build
+ios/build

@@ -9,15 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
-const FACULTIES = ["Engineering", "Science", "Arts", "Medicine", "Law", "Business"];
+const FACULTIES = ["Engineering"];
 const DEPARTMENTS: Record<string, string[]> = {
-  Engineering: ["Computer Science", "Electrical", "Mechanical", "Civil"],
-  Science: ["Physics", "Chemistry", "Biology", "Mathematics"],
-  Arts: ["English", "History", "Philosophy", "Fine Arts"],
-  Medicine: ["Medicine", "Nursing", "Pharmacy", "Dentistry"],
-  Law: ["Law"],
-  Business: ["Accounting", "Finance", "Management", "Marketing"],
+  Engineering: ["Electronic and Computer Engineering"],
 };
 const LEVELS = ["100", "200", "300", "400", "500"];
 const SEMESTERS = ["1st Semester", "2nd Semester"];
@@ -33,22 +30,65 @@ const StudentRegister = () => {
     password: "",
     level: "",
     semester: "",
-    faculty: "",
-    department: "",
+    faculty: "Engineering",
+    department: "Electronic and Computer Engineering",
     parentPhone: "",
     deviceBinding: false,
   });
   const [faceImages, setFaceImages] = useState<string[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
 
   const updateForm = (key: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const captureFace = () => {
-    // Simulated face capture — in Capacitor native, this would use camera plugin
-    const mockEmbedding = `face_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    setFaceImages((prev) => [...prev, mockEmbedding]);
-    toast.success(`Face ${faceImages.length + 1} captured`);
+  const fetchCourses = async () => {
+    if (!form.level || !form.semester) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("level", form.level)
+        .eq("semester", form.semester);
+      
+      if (error) throw error;
+      setAvailableCourses(data || []);
+      setStep(3);
+    } catch (error: any) {
+      toast.error("Failed to load courses");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleCourse = (courseId: string) => {
+    setSelectedCourses(prev => 
+      prev.includes(courseId) 
+        ? prev.filter(id => id !== courseId)
+        : [...prev, courseId]
+    );
+  };
+
+  const captureFace = async () => {
+    try {
+      const image = await CapCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Camera,
+      });
+
+      if (image.base64String) {
+        setFaceImages((prev) => [...prev, image.base64String!]);
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        toast.success(`Face ${faceImages.length + 1} captured`);
+      }
+    } catch (error) {
+      console.error("Camera error:", error);
+      toast.error("Could not access camera");
+    }
   };
 
   const handleSubmit = async () => {
@@ -58,44 +98,85 @@ const StudentRegister = () => {
     }
     setLoading(true);
     
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
-    
-    if (authError) {
-      toast.error(authError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (authData.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: authData.user.id,
-        full_name: form.fullName,
-        reg_number: form.regNumber,
-        role: "student",
-        level: form.level,
-        semester: form.semester,
-        faculty: form.faculty,
-        department: form.department,
-        parent_phone: form.parentPhone,
-        device_binding: form.deviceBinding,
-        device_info: form.deviceBinding ? navigator.userAgent : null,
-        face_enrolled: true,
-        face_embeddings: faceImages,
-      });
-
-      if (profileError) {
-        toast.error("Registration failed: " + profileError.message);
+    try {
+      // 0. Check if reg number already exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("reg_number", form.regNumber)
+        .maybeSingle();
+      
+      if (existingProfile) {
+        toast.error("An account with this Registration Number already exists");
         setLoading(false);
         return;
       }
 
-      toast.success("Registration successful! Please verify your email.");
-      navigate("/login");
+      // 1. Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+      });
+      
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // 2. Upload face images to Supabase Storage
+        const uploadPromises = faceImages.map(async (base64, index) => {
+          const blob = await (await fetch(`data:image/jpeg;base64,${base64}`)).blob();
+          const fileName = `${authData.user!.id}/face_${index}_${Date.now()}.jpg`;
+          
+          const { data, error } = await supabase.storage
+            .from("face-enrollments")
+            .upload(fileName, blob, {
+              contentType: "image/jpeg",
+              upsert: true
+            });
+            
+          if (error) throw error;
+          return data.path;
+        });
+
+        const uploadedPaths = await Promise.all(uploadPromises);
+
+        // 3. Create the profile
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: authData.user.id,
+          full_name: form.fullName,
+          reg_number: form.regNumber,
+          role: "student",
+          level: form.level,
+          semester: form.semester,
+          faculty: form.faculty,
+          department: form.department,
+          parent_phone: form.parentPhone,
+          device_binding: form.deviceBinding,
+          device_info: form.deviceBinding ? navigator.userAgent : null,
+          face_enrolled: true,
+          face_embeddings: { paths: uploadedPaths }, // Storing paths temporarily until extraction service runs
+        });
+
+        if (profileError) throw profileError;
+
+        // 4. Save enrollments
+        if (selectedCourses.length > 0) {
+          const enrollmentData = selectedCourses.map(courseId => ({
+            student_id: authData.user.id,
+            course_id: courseId
+          }));
+          const { error: enrollError } = await supabase.from("enrollments").insert(enrollmentData);
+          if (enrollError) console.error("Enrollment error:", enrollError);
+        }
+
+        toast.success("Registration successful! Please verify your email.");
+        navigate("/login");
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast.error(error.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -105,7 +186,7 @@ const StudentRegister = () => {
         <button onClick={() => (step > 1 ? setStep(step - 1) : navigate("/"))} className="flex items-center gap-1 text-muted-foreground text-sm">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <span className="text-xs text-muted-foreground font-medium">Step {step} of 3</span>
+        <span className="text-xs text-muted-foreground font-medium">Step {step} of 4</span>
       </div>
 
       {/* Progress bar */}
@@ -114,7 +195,7 @@ const StudentRegister = () => {
           <motion.div
             className="h-full bg-accent rounded-full"
             initial={{ width: "0%" }}
-            animate={{ width: `${(step / 3) * 100}%` }}
+            animate={{ width: `${(step / 4) * 100}%` }}
           />
         </div>
       </div>
@@ -209,14 +290,61 @@ const StudentRegister = () => {
                 </div>
                 <Switch checked={form.deviceBinding} onCheckedChange={(v) => updateForm("deviceBinding", v)} />
               </div>
-              <Button onClick={() => setStep(3)} className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold mt-2">
-                Continue <ChevronRight className="w-4 h-4 ml-1" />
+              <Button onClick={fetchCourses} disabled={loading} className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold mt-2">
+                {loading ? "Loading Courses..." : "Continue"} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </>
         )}
 
         {step === 3 && (
+          <>
+            <h1 className="text-2xl font-bold font-heading mb-1">Course Selection</h1>
+            <p className="text-muted-foreground text-sm mb-6">Select the courses you are offering this semester</p>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {availableCourses.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-sm text-muted-foreground">No courses found for your level/semester.</p>
+                </div>
+              ) : (
+                availableCourses.map((course) => (
+                  <motion.div
+                    key={course.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => toggleCourse(course.id)}
+                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      selectedCourses.includes(course.id)
+                        ? "border-accent bg-accent/5 shadow-sm"
+                        : "border-border bg-card opacity-70"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-foreground">{course.code}</p>
+                        <p className="text-sm text-foreground/80 line-clamp-1">{course.name}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">{course.category} · {course.credit_units || course.creditUnit || 0} Units</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selectedCourses.includes(course.id) ? "bg-accent border-accent" : "border-muted-foreground/30"
+                      }`}>
+                        {selectedCourses.includes(course.id) && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+            <Button 
+              onClick={() => setStep(4)} 
+              disabled={selectedCourses.length === 0}
+              className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold mt-6"
+            >
+              Continue to Face Enrollment <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </>
+        )}
+
+        {step === 4 && (
           <>
             <h1 className="text-2xl font-bold font-heading mb-1">Face Enrollment</h1>
             <p className="text-muted-foreground text-sm mb-6">Capture 3–5 face images for verification</p>

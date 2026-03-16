@@ -9,14 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const FACULTIES = ["Engineering", "Science", "Arts", "Medicine", "Law", "Business"];
+const FACULTIES = ["Engineering"];
 const DEPARTMENTS: Record<string, string[]> = {
-  Engineering: ["Computer Science", "Electrical", "Mechanical", "Civil"],
-  Science: ["Physics", "Chemistry", "Biology", "Mathematics"],
-  Arts: ["English", "History", "Philosophy", "Fine Arts"],
-  Medicine: ["Medicine", "Nursing", "Pharmacy", "Dentistry"],
-  Law: ["Law"],
-  Business: ["Accounting", "Finance", "Management", "Marketing"],
+  Engineering: ["Electronic and Computer Engineering"],
 };
 
 const LecturerRegister = () => {
@@ -27,8 +22,8 @@ const LecturerRegister = () => {
     staffId: "",
     email: "",
     password: "",
-    faculty: "",
-    department: "",
+    faculty: "Engineering",
+    department: "Electronic and Computer Engineering",
   });
 
   const updateForm = (key: string, value: string) => {

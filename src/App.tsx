@@ -9,6 +9,7 @@ import LecturerRegister from "./pages/LecturerRegister";
 import StudentDashboard from "./pages/StudentDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
 import AttendanceVerification from "./pages/AttendanceVerification";
+import AttendanceLedger from "./pages/AttendanceLedger";
 import CreateSession from "./pages/CreateSession";
 import LiveSession from "./pages/LiveSession";
 import Login from "./pages/Login";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/register/lecturer" element={<LecturerRegister />} />
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="/student/verify/:sessionId" element={<AttendanceVerification />} />
+          <Route path="/ledger/:sessionId" element={<AttendanceLedger />} />
           <Route path="/lecturer" element={<LecturerDashboard />} />
           <Route path="/lecturer/create-session" element={<CreateSession />} />
           <Route path="/lecturer/session/:sessionId" element={<LiveSession />} />

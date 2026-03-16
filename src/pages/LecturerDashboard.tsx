@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -9,15 +9,87 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
-const RECENT_SESSIONS = [
-  { id: "rs1", course: "CSC 301", topic: "Binary Trees", date: "Today", present: 45, total: 52 },
-  { id: "rs2", course: "CSC 305", topic: "Process Scheduling", date: "Yesterday", present: 38, total: 50 },
-  { id: "rs3", course: "CSC 311", topic: "Dynamic Programming", date: "2 days ago", present: 42, total: 48 },
-];
-
 const LecturerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    courseCount: 0,
+    avgRate: 0,
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // 1. Fetch Profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      setProfile(profileData);
+
+      // 2. Fetch Sessions and calculate present/total
+      // We'll join with courses and fetch record counts
+      const { data: sessionsData } = await supabase
+        .from("attendance_sessions")
+        .select(`
+          *,
+          courses(name, code),
+          attendance_records(id, status)
+        `)
+        .eq("lecturer_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (sessionsData) {
+        // For each session, we need the total enrolled students to calculate attendance rate
+        const sessionsWithStats = await Promise.all(sessionsData.map(async (s: any) => {
+          const { count: totalEnrolled } = await supabase
+            .from("enrollments")
+            .select("*", { count: 'exact', head: true })
+            .eq("course_id", s.course_id);
+          
+          const present = s.attendance_records?.filter((r: any) => r.status === 'verified').length || 0;
+          return {
+            ...s,
+            present,
+            total: totalEnrolled || 0,
+            date: new Date(s.created_at).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : new Date(s.created_at).toLocaleDateString()
+          };
+        }));
+        setSessions(sessionsWithStats);
+
+        // 3. Calculate Global Stats
+        const uniqueCourseIds = new Set(sessionsData.map(s => s.course_id));
+        
+        // Total students assigned (distinct students across all courses taught by lecturer)
+        const { data: assignments } = await supabase
+          .from("enrollments")
+          .select("student_id")
+          .in("course_id", Array.from(uniqueCourseIds));
+        const totalStudents = new Set(assignments?.map(a => a.student_id)).size;
+
+        const totalPresent = sessionsWithStats.reduce((acc, s) => acc + s.present, 0);
+        const totalPossible = sessionsWithStats.reduce((acc, s) => acc + s.total, 0);
+        const avgRate = totalPossible > 0 ? Math.round((totalPresent / totalPossible) * 100) : 0;
+
+        setStats({
+          totalStudents,
+          courseCount: uniqueCourseIds.size,
+          avgRate
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -31,8 +103,8 @@ const LecturerDashboard = () => {
       {/* Header */}
       <div className="px-5 pt-5 pb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-heading">Hi, Lecturer 👋</h1>
-          <p className="text-xs text-muted-foreground">Computer Science · Engineering</p>
+          <h1 className="text-xl font-bold font-heading">Hi, {profile?.full_name?.split(' ')[0] || 'Lecturer'} 👋</h1>
+          <p className="text-xs text-muted-foreground">{profile?.department} · {profile?.faculty}</p>
         </div>
         <div className="flex gap-2">
           <button className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center">
@@ -68,16 +140,16 @@ const LecturerDashboard = () => {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-xl bg-card border border-border text-center">
-              <p className="text-lg font-bold">125</p>
-              <p className="text-[10px] text-muted-foreground">Total Students</p>
+              <p className="text-lg font-bold">{stats.totalStudents}</p>
+              <p className="text-[10px] text-muted-foreground">Enrolled Students</p>
             </div>
             <div className="p-3 rounded-xl bg-card border border-border text-center">
-              <p className="text-lg font-bold">3</p>
-              <p className="text-[10px] text-muted-foreground">Courses</p>
+              <p className="text-lg font-bold">{stats.courseCount}</p>
+              <p className="text-[10px] text-muted-foreground">Active Courses</p>
             </div>
             <div className="p-3 rounded-xl bg-card border border-border text-center">
-              <p className="text-lg font-bold text-accent">78%</p>
-              <p className="text-[10px] text-muted-foreground">Avg. Rate</p>
+              <p className="text-lg font-bold text-accent">{stats.avgRate}%</p>
+              <p className="text-[10px] text-muted-foreground">Avg. Attendance</p>
             </div>
           </div>
 
@@ -85,28 +157,35 @@ const LecturerDashboard = () => {
           <div>
             <h2 className="text-sm font-semibold text-foreground mb-3">Recent Sessions</h2>
             <div className="space-y-3">
-              {RECENT_SESSIONS.map((session) => (
-                <motion.div
-                  key={session.id}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate(`/lecturer/session/${session.id}`)}
-                  className="p-4 rounded-xl bg-card border border-border shadow-sm cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold">{session.course}</p>
-                    <span className="text-xs text-muted-foreground">{session.date}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">{session.topic}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {session.present}/{session.total} present
-                    </span>
-                    <span className={`text-xs font-bold ${(session.present / session.total) * 100 >= 75 ? "text-accent" : "text-warning"}`}>
-                      {Math.round((session.present / session.total) * 100)}%
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+              {sessions.length === 0 ? (
+                <div className="p-10 text-center bg-card rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground">No sessions created yet.</p>
+                  <Button variant="link" onClick={() => navigate("/lecturer/create-session")} className="text-accent text-xs">Create your first session</Button>
+                </div>
+              ) : (
+                sessions.slice(0, 5).map((session) => (
+                  <motion.div
+                    key={session.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(`/lecturer/session/${session.id}`)}
+                    className="p-4 rounded-xl bg-card border border-border shadow-sm cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold">{(session.courses as any)?.code || 'Course'}</p>
+                      <span className="text-xs text-muted-foreground">{session.date}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">{session.topic || 'No topic'}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Users className="w-3 h-3" /> {session.present}/{session.total} present
+                      </span>
+                      <span className={`text-xs font-bold ${session.total > 0 && (session.present / session.total) * 100 >= 75 ? "text-accent" : "text-warning"}`}>
+                        {session.total > 0 ? Math.round((session.present / session.total) * 100) : 0}%
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </div>
         </motion.div>
@@ -117,20 +196,22 @@ const LecturerDashboard = () => {
           <h2 className="text-lg font-bold font-heading mb-4">Analytics</h2>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold text-accent">78%</p>
+              <p className="text-2xl font-bold text-accent">{stats.avgRate}%</p>
               <p className="text-xs text-muted-foreground">Avg. Attendance</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold">53</p>
+              <p className="text-2xl font-bold">{sessions.length}</p>
               <p className="text-xs text-muted-foreground">Sessions Created</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold text-destructive">12</p>
-              <p className="text-xs text-muted-foreground">At-Risk Students</p>
+              <p className="text-2xl font-bold text-destructive">
+                {sessions.reduce((acc, s) => acc + (s.total - s.present), 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Total Absences</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold">5</p>
-              <p className="text-xs text-muted-foreground">Manual Additions</p>
+              <p className="text-2xl font-bold">{stats.courseCount}</p>
+              <p className="text-xs text-muted-foreground">Courses Managed</p>
             </div>
           </div>
         </motion.div>
@@ -144,11 +225,11 @@ const LecturerDashboard = () => {
               <User className="w-8 h-8 text-primary" />
             </div>
             {[
-              ["Name", "Dr. Adeyemi"],
-              ["Staff ID", "STAFF/2024/001"],
-              ["Faculty", "Engineering"],
-              ["Department", "Computer Science"],
-              ["Courses", "3"],
+              ["Name", profile?.full_name],
+              ["Staff ID", profile?.staff_id],
+              ["Faculty", profile?.faculty],
+              ["Department", profile?.department],
+              ["Managed Courses", stats.courseCount.toString()],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{label}</span>
