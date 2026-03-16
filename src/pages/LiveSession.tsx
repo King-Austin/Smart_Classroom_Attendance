@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { formatTime, formatDate } from "@/lib/date";
+import { getAttendanceMethod } from "@/lib/attendance";
 
 const LiveSession = () => {
   const navigate = useNavigate();
@@ -54,8 +56,8 @@ const LiveSession = () => {
           regNumber: profileMap[r.student_id]?.reg_number || "REG/None",
           status: r.status,
           faceScore: r.face_score,
-          time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          method: r.is_manual ? "manual" : "auto"
+          time: formatTime(r.created_at),
+          method: getAttendanceMethod(r.is_manual)
         })));
       }
 
@@ -95,8 +97,8 @@ const LiveSession = () => {
             regNumber: profile?.reg_number || "REG/None",
             status: payload.new.status,
             faceScore: payload.new.face_score,
-            time: new Date(payload.new.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            method: payload.new.is_manual ? "manual" : "auto"
+            time: formatTime(payload.new.created_at),
+            method: getAttendanceMethod(payload.new.is_manual)
           };
           
           setStudents((prev) => [newStudent, ...prev]);
@@ -208,7 +210,7 @@ const LiveSession = () => {
               {session?.courses?.code}: {session?.courses?.name}
             </h1>
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
-              {session?.lecturer?.full_name} · {new Date(session?.started_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+              {session?.lecturer?.full_name} · {formatDate(session?.started_at)}
             </p>
           </div>
 
@@ -369,7 +371,7 @@ const LiveSession = () => {
                           {student.status === "verified" ? "Present" : "Checking"}
                        </span>
                     </div>
-                    {student.method === "manual" && (
+                    {student.method === "Manual" && (
                       <span className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest px-1">Manual</span>
                     )}
                   </div>

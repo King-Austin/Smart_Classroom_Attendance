@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatTime, formatDate } from "@/lib/date";
 
 const AttendanceLedger = () => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const AttendanceLedger = () => {
             index: index + 1,
             name: profileMap[r.student_id]?.full_name || "Unknown Student",
             regNumber: profileMap[r.student_id]?.reg_number || "REG/None",
-            time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: formatTime(r.created_at)
           })));
         }
       } catch (error: any) {
@@ -107,7 +108,7 @@ const AttendanceLedger = () => {
                 <User className="w-3.5 h-3.5" /> {session?.profiles?.full_name}
               </span>
               <span className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" /> {session?.started_at && new Date(session.started_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                <Clock className="w-3.5 h-3.5" /> {session?.started_at && formatDate(session.started_at)}
               </span>
               <span className="flex items-center gap-1.5 text-accent font-bold">
                 <Users className="w-3.5 h-3.5" /> {students.length} Present

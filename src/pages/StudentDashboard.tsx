@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { useEffect, useState } from "react";
+import { formatTime, formatDate } from "@/lib/date";
+import { calculatePercentage } from "@/lib/utils";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -171,7 +173,7 @@ const StudentDashboard = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Started {new Date(session.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <Clock className="w-3 h-3" /> Started {formatTime(session.started_at)}
                     </span>
                     <div className="flex flex-col gap-2 w-full mt-2">
                        <Button 
@@ -228,7 +230,7 @@ const StudentDashboard = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{item.attendance_sessions?.courses?.code}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString()} · {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatDate(item.created_at)} · {formatTime(item.created_at)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -255,7 +257,7 @@ const StudentDashboard = () => {
           <h2 className="text-lg font-bold font-heading mb-4">Analytics</h2>
           <div className="grid grid-cols-2 gap-3 mb-6">
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold text-accent">{Math.round((history.filter(h => h.status === 'verified').length / (history.length || 1)) * 100)}%</p>
+              <p className="text-2xl font-bold text-accent">{calculatePercentage(history.filter(h => h.status === 'verified').length, history.length)}%</p>
               <p className="text-xs text-muted-foreground">Recent Rate</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border text-center">

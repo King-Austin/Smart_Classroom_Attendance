@@ -8,6 +8,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
+import { formatSessionDate } from "@/lib/date";
+import { calculatePercentage } from "@/lib/utils";
 
 const LecturerDashboard = () => {
   const navigate = useNavigate();
@@ -60,7 +62,7 @@ const LecturerDashboard = () => {
             ...s,
             present,
             total: totalEnrolled || 0,
-            date: new Date(s.created_at).toLocaleDateString() === new Date().toLocaleDateString() ? "Today" : new Date(s.created_at).toLocaleDateString()
+            date: formatSessionDate(s.created_at)
           };
         }));
         setSessions(sessionsWithStats);
@@ -77,7 +79,7 @@ const LecturerDashboard = () => {
 
         const totalPresent = sessionsWithStats.reduce((acc, s) => acc + s.present, 0);
         const totalPossible = sessionsWithStats.reduce((acc, s) => acc + s.total, 0);
-        const avgRate = totalPossible > 0 ? Math.round((totalPresent / totalPossible) * 100) : 0;
+        const avgRate = calculatePercentage(totalPresent, totalPossible);
 
         setStats({
           totalStudents,
@@ -179,8 +181,8 @@ const LecturerDashboard = () => {
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" /> {session.present}/{session.total} present
                       </span>
-                      <span className={`text-xs font-bold ${session.total > 0 && (session.present / session.total) * 100 >= 75 ? "text-accent" : "text-warning"}`}>
-                        {session.total > 0 ? Math.round((session.present / session.total) * 100) : 0}%
+                      <span className={`text-xs font-bold ${calculatePercentage(session.present, session.total) >= 75 ? "text-accent" : "text-warning"}`}>
+                        {calculatePercentage(session.present, session.total)}%
                       </span>
                     </div>
                   </motion.div>

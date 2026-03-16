@@ -12,22 +12,8 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/
 import { BleClient, ScanMode } from "@capacitor-community/bluetooth-le";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { supabase } from "@/integrations/supabase/client";
-
-// Helper for distance calculation
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371e3; // metres
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // in metres
-};
+import { calculateDistance } from "@/lib/geo";
+import { formatTime } from "@/lib/date";
 
 type VerificationStep = "permissions" | "face" | "gps" | "ble" | "verifying" | "success" | "failed";
 
@@ -383,7 +369,7 @@ const AttendanceVerification = () => {
                           </div>
                         </div>
                         <span className="text-[10px] text-zinc-500 font-mono">
-                          {isDone ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                          {isDone ? formatTime(new Date()) : "--:--"}
                         </span>
                       </motion.div>
                     );
@@ -428,7 +414,7 @@ const AttendanceVerification = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-xs text-zinc-500">Timestamp</span>
-                      <span className="text-xs text-white font-medium">{new Date().toLocaleTimeString()}</span>
+                      <span className="text-xs text-white font-medium">{formatTime(new Date())}</span>
                     </div>
                   </div>
                 </div>
