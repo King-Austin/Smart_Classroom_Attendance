@@ -14,7 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance_records: {
+        Row: {
+          ble_rssi: number | null
+          created_at: string
+          device_id: string | null
+          face_score: number | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          is_manual: boolean | null
+          reason: string | null
+          session_id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          ble_rssi?: number | null
+          created_at?: string
+          device_id?: string | null
+          face_score?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          is_manual?: boolean | null
+          reason?: string | null
+          session_id: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          ble_rssi?: number | null
+          created_at?: string
+          device_id?: string | null
+          face_score?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          is_manual?: boolean | null
+          reason?: string | null
+          session_id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_sessions: {
+        Row: {
+          ble_token: string | null
+          course_id: string
+          created_at: string
+          day_number: number
+          ended_at: string | null
+          geo_radius_meters: number | null
+          id: string
+          lecturer_id: string
+          lecturer_lat: number | null
+          lecturer_lng: number | null
+          started_at: string
+          status: string
+          topic: string | null
+          verification_rules: Json
+        }
+        Insert: {
+          ble_token?: string | null
+          course_id: string
+          created_at?: string
+          day_number: number
+          ended_at?: string | null
+          geo_radius_meters?: number | null
+          id?: string
+          lecturer_id: string
+          lecturer_lat?: number | null
+          lecturer_lng?: number | null
+          started_at?: string
+          status?: string
+          topic?: string | null
+          verification_rules?: Json
+        }
+        Update: {
+          ble_token?: string | null
+          course_id?: string
+          created_at?: string
+          day_number?: number
+          ended_at?: string | null
+          geo_radius_meters?: number | null
+          id?: string
+          lecturer_id?: string
+          lecturer_lat?: number | null
+          lecturer_lng?: number | null
+          started_at?: string
+          status?: string
+          topic?: string | null
+          verification_rules?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_assignments: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          lecturer_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          lecturer_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          lecturer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          code: string
+          created_at: string
+          department: string
+          faculty: string
+          id: string
+          level: string
+          name: string
+          semester: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          department: string
+          faculty: string
+          id?: string
+          level: string
+          name: string
+          semester: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          department?: string
+          faculty?: string
+          id?: string
+          level?: string
+          name?: string
+          semester?: string
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          device_binding: boolean | null
+          device_info: string | null
+          face_embeddings: Json | null
+          face_enrolled: boolean | null
+          faculty: string | null
+          full_name: string
+          id: string
+          level: string | null
+          parent_phone: string | null
+          reg_number: string | null
+          role: string
+          semester: string | null
+          staff_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          device_binding?: boolean | null
+          device_info?: string | null
+          face_embeddings?: Json | null
+          face_enrolled?: boolean | null
+          faculty?: string | null
+          full_name: string
+          id: string
+          level?: string | null
+          parent_phone?: string | null
+          reg_number?: string | null
+          role: string
+          semester?: string | null
+          staff_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          device_binding?: boolean | null
+          device_info?: string | null
+          face_embeddings?: Json | null
+          face_enrolled?: boolean | null
+          faculty?: string | null
+          full_name?: string
+          id?: string
+          level?: string | null
+          parent_phone?: string | null
+          reg_number?: string | null
+          role?: string
+          semester?: string | null
+          staff_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
