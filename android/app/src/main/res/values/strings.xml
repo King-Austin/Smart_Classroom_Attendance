@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Smart Attendance</string>
     <string name="title_activity_main">Smart Attendance</string>
-    <string name="package_name">app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32</string>
-    <string name="custom_url_scheme">app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32</string>
+    <string name="package_name">com.smartattendance.app</string>
+    <string name="custom_url_scheme">com.smartattendance.app</string>
 </resources>

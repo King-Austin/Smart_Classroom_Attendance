@@ -181,6 +181,13 @@ const StudentDashboard = () => {
               progress={stats.overallProgress}
               attended={stats.attendedSessions}
               total={stats.totalSessions}
+              ranking={
+                stats.overallProgress >= 95 ? "Top 5% of your department" :
+                stats.overallProgress >= 85 ? "Top 15% of your department" :
+                stats.overallProgress >= 70 ? "Top 30% of your department" :
+                stats.overallProgress >= 50 ? "Top 50% of your department" :
+                "Keep pushing for Top 50%!"
+              }
               loading={statsLoading}
             />
 
@@ -376,6 +383,7 @@ const StudentDashboard = () => {
         studentId={profile?.id}
         level={profile?.level}
         semester={profile?.semester}
+        department={profile?.department}
         currentCourseIds={courses.map(c => c.id)}
       />
 

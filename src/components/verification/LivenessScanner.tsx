@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, CheckCircle2, RotateCcw, UserCheck, Loader2 } from "lucide-react";
 
 interface LivenessScannerProps {
-  onVerify: (base64Image: string) => void;
+  onVerify: (images: string[]) => void;
   onCancel: () => void;
 }
 
@@ -18,6 +18,24 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
   const [isCalibrated, setIsCalibrated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [poorLighting, setPoorLighting] = useState(false);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+
+  // Capture current frame
+  const captureFrame = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0);
+        return canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
+      }
+    }
+    return null;
+  };
 
   // Helper to check lighting brightness
   const checkLighting = (video: HTMLVideoElement) => {
@@ -26,7 +44,6 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Use a small sample to save performance
     canvas.width = 40;
     canvas.height = 40;
     ctx.drawImage(video, 0, 0, 40, 40);
@@ -34,11 +51,10 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
     
     let brightness = 0;
     for (let i = 0; i < data.length; i += 4) {
-      // Relative luminance formula
       brightness += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
     }
     const avgBrightness = brightness / (data.length / 4);
-    setPoorLighting(avgBrightness < 45); // Threshold for "too dark"
+    setPoorLighting(avgBrightness < 45); 
   };
 
   // Initialize MediaPipe
@@ -66,11 +82,24 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
     initScanner();
   }, []);
 
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
   // Set up Camera
   useEffect(() => {
     if (!loading) {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 640, height: 480 } })
         .then((stream) => {
+          streamRef.current = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             videoRef.current.play();
@@ -79,10 +108,7 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
         .catch((err) => console.error("Camera Error", err));
     }
 
-    return () => {
-      const stream = videoRef.current?.srcObject as MediaStream;
-      stream?.getTracks().forEach(track => track.stop());
-    };
+    return () => stopCamera();
   }, [loading]);
 
   // Detection Loop
@@ -92,7 +118,6 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
 
     const detect = () => {
       if (faceLandmarker && videoRef.current && videoRef.current.readyState === 4) {
-        // Run lighting check every 30 frames to save CPU
         if (frameCount % 30 === 0) {
           checkLighting(videoRef.current);
         }
@@ -102,25 +127,35 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
         
         if (results.faceLandmarks && results.faceLandmarks.length > 0) {
           const landmarks = results.faceLandmarks[0];
-          
-          // Mirror logic: Detect landmarks in the mirrored stream
           const nose = landmarks[4];
           const leftEye = landmarks[33];
           const rightEye = landmarks[263];
           
           const midPoint = (leftEye.x + rightEye.x) / 2;
-          // Inverted yaw calculation because the video is scaleX(-1)
           const yaw = -(nose.x - midPoint) / (rightEye.x - leftEye.x);
 
-          // Liveness Steps Logic
           if (step === "center" && Math.abs(yaw) < 0.1) {
             setIsCalibrated(true);
-            setTimeout(() => setStep("right"), 1000);
+            const img = captureFrame();
+            if (img) {
+              setCapturedImages(prev => [...prev, img]);
+              setTimeout(() => setStep("right"), 1000);
+            }
           } else if (step === "right" && yaw > 0.35) {
-            setStep("left");
+            const img = captureFrame();
+            if (img) {
+              setCapturedImages(prev => [...prev, img]);
+              setStep("left");
+            }
           } else if (step === "left" && yaw < -0.35) {
-            setStep("complete");
-            captureAndFinalize();
+            const img = captureFrame();
+            if (img) {
+              const finalImages = [...capturedImages, img];
+              setCapturedImages(finalImages);
+              setStep("complete");
+              stopCamera();
+              setTimeout(() => onVerify(finalImages), 800);
+            }
           }
         }
       }
@@ -131,24 +166,7 @@ const LivenessScanner = ({ onVerify, onCancel }: LivenessScannerProps) => {
       detect();
     }
     return () => cancelAnimationFrame(animationFrameId);
-  }, [faceLandmarker, step]);
-
-  const captureAndFinalize = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Mirror the final image capture so it looks natural to the user
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(videoRef.current, 0, 0);
-        const base64 = canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
-        setTimeout(() => onVerify(base64), 800);
-      }
-    }
-  };
+  }, [faceLandmarker, step, capturedImages]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6">

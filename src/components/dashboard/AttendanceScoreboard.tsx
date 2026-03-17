@@ -5,10 +5,11 @@ interface AttendanceScoreboardProps {
   progress: number;
   attended: number;
   total: number;
+  ranking?: string;
   loading?: boolean;
 }
 
-export const AttendanceScoreboard = ({ progress, attended, total, loading }: AttendanceScoreboardProps) => {
+export const AttendanceScoreboard = ({ progress, attended, total, ranking, loading }: AttendanceScoreboardProps) => {
   if (loading) {
     return (
       <div className="h-48 w-full rounded-3xl bg-zinc-900/50 animate-pulse border border-zinc-800" />
@@ -83,7 +84,7 @@ export const AttendanceScoreboard = ({ progress, attended, total, loading }: Att
               </div>
               <div>
                 <p className="text-sm font-bold">Academic Ranking</p>
-                <p className="text-[10px] text-zinc-500">Top 15% of your department</p>
+                <p className="text-[10px] text-zinc-500">{ranking || "Calculating ranking..."}</p>
               </div>
             </div>
             <TrendingUp className="w-5 h-5 text-accent/50" />

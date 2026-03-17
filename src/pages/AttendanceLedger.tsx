@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { formatTime, formatDate } from "@/lib/date";
 import { ATTENDANCE_STATUS } from "@/constants";
 import { PresenceLoader } from "@/components/PresenceLoader";
+import { SessionActionsDialog } from "@/components/lecturer/SessionActionsDialog";
+import { Edit2 } from "lucide-react";
 
 const AttendanceLedger = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const AttendanceLedger = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
 
   useEffect(() => {
     const fetchLedgerData = async () => {
@@ -71,7 +74,7 @@ const AttendanceLedger = () => {
     };
 
     fetchLedgerData();
-  }, [sessionId]);
+  }, [sessionId, isActionsOpen]);
 
   const filteredStudents = students.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -119,6 +122,14 @@ const AttendanceLedger = () => {
                 <UserCheck className="w-3.5 h-3.5" /> {students.length} Present
               </span>
             </div>
+            
+            <Button 
+               onClick={() => setIsActionsOpen(true)}
+               variant="outline" 
+               className="w-full mt-6 h-12 rounded-2xl border-dashed border-accent/30 bg-accent/5 text-accent font-bold uppercase tracking-widest text-[10px] hover:bg-accent/10"
+            >
+               <Edit2 className="w-4 h-4 mr-2" /> Manage Session
+            </Button>
           </div>
 
           {/* Search Header */}
@@ -181,6 +192,17 @@ const AttendanceLedger = () => {
           )}
         </motion.div>
       </div>
+      
+      {session && (
+        <SessionActionsDialog 
+          isOpen={isActionsOpen}
+          onClose={() => setIsActionsOpen(false)}
+          session={session}
+          onUpdated={() => {
+            // refresh happens via useEffect dependency or manual call
+          }}
+        />
+      )}
     </div>
   );
 };

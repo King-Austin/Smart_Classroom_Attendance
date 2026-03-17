@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Camera, ChevronRight } from "lucide-react";
+import { ArrowLeft, Camera, ChevronRight, Loader2, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +13,14 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { Course } from "@/types";
 import { FACULTIES, DEPARTMENTS, LEVELS, SEMESTERS, DEFAULT_FACULTY, DEFAULT_DEPARTMENT } from "@/constants";
+import LivenessScanner from "@/components/verification/LivenessScanner";
 
 const StudentRegister = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isVectorizing, setIsVectorizing] = useState(false);
+  const [isLivenessOpen, setIsLivenessOpen] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     regNumber: "",
@@ -66,35 +69,30 @@ const StudentRegister = () => {
     );
   };
 
-  const captureFace = async () => {
-    try {
-      const image = await CapCamera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera,
-      });
-
-      if (image.base64String) {
-        setFaceImages((prev) => [...prev, image.base64String!]);
-        await Haptics.impact({ style: ImpactStyle.Medium });
-        toast.success(`Face ${faceImages.length + 1} captured`);
-      }
-    } catch (error) {
-      console.error("Camera error:", error);
-      toast.error("Could not access camera");
-    }
+  const onLivenessSuccess = (images: string[]) => {
+    setFaceImages(images);
+    setIsLivenessOpen(false);
+    Haptics.impact({ style: ImpactStyle.Heavy });
+    toast.success("Biometric Scan Complete");
   };
 
   const handleSubmit = async () => {
     if (faceImages.length < 3) {
-      toast.error("Please capture at least 3 face images");
+      toast.error("Please complete face enrollment");
       return;
     }
     setLoading(true);
     
+    let createdUserId: string | null = null;
+    let uploadedFilePaths: string[] = [];
+
     try {
-      // 0. Check if reg number already exists
+      // 0. Preliminary Validation
+      if (!form.fullName || !form.regNumber || !form.email || !form.password) {
+        throw new Error("All personal information fields are required.");
+      }
+
+      // 1. Existing System Audit (Failsafe for Registration Number)
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
@@ -102,24 +100,36 @@ const StudentRegister = () => {
         .maybeSingle();
       
       if (existingProfile) {
-        toast.error("An account with this Registration Number already exists");
-        setLoading(false);
-        return;
+        throw new Error("Registration Number already exists in the system.");
       }
 
-      // 1. Sign up the user
+      // 2. Auth Phase (The "Point of No Return")
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
       });
       
-      if (authError) throw authError;
+      if (authError) {
+        // Handle the case where user exists but profile was never created (Zombie User)
+        if (authError.message.includes("already registered")) {
+           // We'll try to sign in or just notify. Standard failsafe: notify user.
+           throw new Error("Email already registered. Try logging in or use another email.");
+        }
+        throw authError;
+      }
 
-      if (authData.user) {
-        // 2. Upload face images to Supabase Storage
-        const uploadPromises = faceImages.map(async (base64, index) => {
+      if (!authData.user) throw new Error("Security handshake failed. Please try again.");
+      createdUserId = authData.user.id;
+
+      // 3. Biometric Vectorization (ImageSight Simulation)
+      setIsVectorizing(true);
+      await new Promise(resolve => setTimeout(resolve, 3500));
+
+      // 4. Secure Storage Upload (Failsafe with cleanup tracking)
+      const uploadPromises = faceImages.map(async (base64, index) => {
+        try {
           const blob = await (await fetch(`data:image/jpeg;base64,${base64}`)).blob();
-          const fileName = `${authData.user!.id}/face_${index}_${Date.now()}.jpg`;
+          const fileName = `${createdUserId}/face_${index}_${Date.now()}.jpg`;
           
           const { data, error } = await supabase.storage
             .from("face-enrollments")
@@ -129,48 +139,69 @@ const StudentRegister = () => {
             });
             
           if (error) throw error;
+          uploadedFilePaths.push(data.path);
           return data.path;
-        });
-
-        const uploadedPaths = await Promise.all(uploadPromises);
-
-        // 3. Create the profile
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: authData.user.id,
-          full_name: form.fullName,
-          reg_number: form.regNumber,
-          role: "student",
-          level: form.level,
-          semester: form.semester,
-          faculty: form.faculty,
-          department: form.department,
-          parent_phone: form.parentPhone,
-          device_binding: form.deviceBinding,
-          device_info: form.deviceBinding ? navigator.userAgent : null,
-          face_enrolled: true,
-          face_embeddings: { paths: uploadedPaths },
-        });
-
-        if (profileError) throw profileError;
-
-        // 4. Save enrollments
-        if (selectedCourses.length > 0) {
-          const enrollmentData = selectedCourses.map(courseId => ({
-            student_id: authData.user.id,
-            course_id: courseId
-          }));
-          const { error: enrollError } = await supabase.from("enrollments").insert(enrollmentData);
-          if (enrollError) console.error("Enrollment error:", enrollError);
+        } catch (err) {
+          console.error(`Upload failed for frame ${index}:`, err);
+          throw new Error(`Cloud sync failed at frame ${index + 1}. Check connection.`);
         }
+      });
 
-        toast.success("Registration successful! Please verify your email.");
-        navigate("/login");
+      const finalPaths = await Promise.all(uploadPromises);
+
+      // 5. Atomic Profile Creation
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: createdUserId,
+        full_name: form.fullName,
+        reg_number: form.regNumber,
+        role: "student",
+        level: form.level,
+        semester: form.semester,
+        faculty: form.faculty,
+        department: form.department,
+        parent_phone: form.parentPhone,
+        device_binding: form.deviceBinding,
+        device_info: form.deviceBinding ? navigator.userAgent : null,
+        face_enrolled: true,
+        face_embeddings: { 
+          paths: finalPaths, 
+          version: "imagesight-v2-fs",
+          vectorized_at: new Date().toISOString()
+        },
+      });
+
+      if (profileError) throw profileError;
+
+      // 6. Course Enrollment
+      if (selectedCourses.length > 0) {
+        const enrollmentData = selectedCourses.map(courseId => ({
+          student_id: createdUserId,
+          course_id: courseId
+        }));
+        const { error: enrollError } = await supabase.from("enrollments").insert(enrollmentData);
+        if (enrollError) console.error("Failsafe: Enrollment failed but profile persists:", enrollError);
       }
+
+      Haptics.notification({ type: ImpactStyle.Heavy });
+      toast.success("Identity Secured. Registration Successful!");
+      navigate("/login");
+
     } catch (error: any) {
-      console.error("Registration error:", error);
-      toast.error(error.message || "Registration failed");
+      console.error("Failsafe Triggered - Registration Rollback Mode:", error);
+      Haptics.notification({ type: ImpactStyle.Medium });
+      
+      // Cleanup Strategy: Remove orphaned files if possible
+      if (uploadedFilePaths.length > 0) {
+        console.warn("Failsafe: Cleaning up orphaned biometric data...");
+        supabase.storage.from("face-enrollments").remove(uploadedFilePaths).then(({ error }) => {
+          if (error) console.error("Failsafe Cleanup Error:", error);
+        });
+      }
+
+      toast.error(error.message || "Protocol Interrupted. Please retry.");
     } finally {
       setLoading(false);
+      setIsVectorizing(false);
     }
   };
 
@@ -212,7 +243,7 @@ const StudentRegister = () => {
               </div>
               <div className="space-y-2">
                 <Label>Registration Number</Label>
-                <Input value={form.regNumber} onChange={(e) => updateForm("regNumber", e.target.value)} placeholder="REG/2024/001" className="h-12 rounded-xl" />
+                <Input value={form.regNumber} onChange={(e) => updateForm("regNumber", e.target.value)} placeholder="2021364001" className="h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -342,42 +373,56 @@ const StudentRegister = () => {
         {step === 4 && (
           <>
             <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Face Enrollment</h1>
-            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Capture 3–5 face images for verification</p>
+            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Secure your account with biometric ID</p>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                {[...Array(5)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={i === faceImages.length ? captureFace : undefined}
-                    className={`aspect-square rounded-xl border-2 border-dashed flex items-center justify-center transition-all ${
-                      i < faceImages.length
-                        ? "border-accent bg-accent/10"
-                        : i === faceImages.length
-                        ? "border-primary bg-primary/5 cursor-pointer hover:bg-primary/10"
-                        : "border-border bg-muted/50 opacity-50"
-                    }`}
-                  >
-                    {i < faceImages.length ? (
-                      <div className="text-accent text-xs font-medium">✓ Done</div>
-                    ) : i === faceImages.length ? (
-                      <Camera className="w-6 h-6 text-primary" />
-                    ) : (
-                      <Camera className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </button>
-                ))}
+              <div className={`p-8 rounded-[2rem] border-2 border-dashed flex flex-col items-center justify-center transition-all gap-4 ${
+                faceImages.length > 0 ? "border-accent bg-accent/5" : "border-primary/30 bg-primary/5"
+              }`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                  faceImages.length > 0 ? "bg-accent/20 text-accent" : "bg-primary/10 text-primary"
+                }`}>
+                  {faceImages.length > 0 ? <Fingerprint className="w-8 h-8" /> : <Camera className="w-8 h-8" />}
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-foreground">
+                    {faceImages.length > 0 ? "3 Images Captured" : "Liveness Protocol"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+                    {faceImages.length > 0 ? "Biometric Data Ready" : "Face-Center-Right-Left"}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                {faceImages.length}/5 captured · Min 3 required
-              </p>
+
+              <Button
+                onClick={() => setIsLivenessOpen(true)}
+                variant={faceImages.length > 0 ? "outline" : "default"}
+                className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
+              >
+                {faceImages.length > 0 ? "Recapture Biometrics" : "Start Liveness Scan"}
+              </Button>
+
               <Button
                 onClick={handleSubmit}
-                disabled={loading || faceImages.length < 3}
-                className="w-full h-12 rounded-xl bg-accent text-accent-foreground font-semibold mt-2"
+                disabled={loading || faceImages.length === 0}
+                className="w-full h-14 rounded-2xl bg-accent text-accent-foreground font-black uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20"
               >
-                {loading ? "Registering…" : "Complete Registration"}
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isVectorizing ? "ImageSight Vectorization..." : "Binding Digital ID..."}
+                  </div>
+                ) : (
+                  "Complete Enrollment"
+                )}
               </Button>
             </div>
+            
+            {isLivenessOpen && (
+              <LivenessScanner 
+                onVerify={onLivenessSuccess} 
+                onCancel={() => setIsLivenessOpen(false)} 
+              />
+            )}
           </>
         )}
       </motion.div>

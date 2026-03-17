@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, Eye, UserPlus, LogOut, BookOpen, BarChart3, User,
+  Plus, LogOut, BookOpen, BarChart3, User,
   Users, Activity, ChevronRight, TrendingUp, Calendar, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,21 @@ import { AttendancePinger } from "@/components/dashboard/AttendancePinger";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutConfirmDialog } from "@/components/LogoutConfirmDialog";
 import { PresenceLoader } from "@/components/PresenceLoader";
+import { SessionActionsDialog } from "@/components/lecturer/SessionActionsDialog";
+import { Edit2 } from "lucide-react";
 
 const LecturerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  
   const { profile, loading: profileLoading } = useProfile();
   const { sessions, stats, loading: dataLoading } = useLecturerData(profile?.id);
+
+  const activeSessions = sessions.filter(s => s.status === 'active');
+  const recentSessions = sessions.filter(s => s.status !== 'active');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -74,25 +82,23 @@ const LecturerDashboard = () => {
             className="px-5 space-y-6 relative z-10"
           >
             {/* Quick Actions */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { icon: Plus, label: "Create\nSession", color: "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950", action: () => navigate("/lecturer/create-session") },
-                { icon: Eye, label: "Active\nFeed", color: "bg-accent/10 text-accent border border-accent/20", action: () => {} },
-                { icon: UserPlus, label: "Manage\nStudents", color: "bg-card text-foreground border border-border", action: () => {} },
-              ].map(({ icon: Icon, label, color, action }) => (
-                <motion.button
-                  key={label}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={action}
-                  className={`p-4 rounded-3xl flex flex-col items-center gap-2 ${color} shadow-sm backdrop-blur-md transition-all`}
-                >
-                  <Icon className="w-6 h-6" />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter text-center whitespace-pre-line leading-tight">{label}</span>
-                </motion.button>
-              ))}
+            <div className="flex gap-3">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/lecturer/create-session")}
+                className="flex-1 p-5 rounded-[2rem] bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-between shadow-xl group transition-all"
+              >
+                <div className="flex flex-col items-start gap-1">
+                   <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Protocol Launch</p>
+                   <span className="text-sm font-bold uppercase tracking-tight">Create Session</span>
+                </div>
+                <div className="w-10 h-10 rounded-2xl bg-white/10 dark:bg-black/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                   <Plus className="w-6 h-6" />
+                </div>
+              </motion.button>
             </div>
 
-            {/* Performance Overview (New Visual Metrics) */}
+            {/* Performance Overview */}
             <div className="p-6 rounded-[2.5rem] bg-zinc-900 text-white border border-zinc-800 relative overflow-hidden shadow-2xl">
                <div className="absolute top-0 right-0 p-6 opacity-10">
                   <Activity className="w-20 h-20 text-accent" />
@@ -133,63 +139,97 @@ const LecturerDashboard = () => {
                </div>
             </div>
 
-            {/* Recent Sessions */}
-            <div>
-              <div className="flex items-center justify-between mb-4 px-1">
-                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 text-foreground/80">
-                  <Calendar className="w-3.5 h-3.5 text-accent" />
-                  Recent Sessions
-                </h2>
-                <button className="text-[10px] font-bold text-accent uppercase tracking-widest hover:underline">View All</button>
-              </div>
-
-              <div className="space-y-3">
-                {sessions.length === 0 ? (
-                  <div className="p-10 text-center bg-card/30 backdrop-blur-md rounded-3xl border border-dashed border-border opacity-60">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Empty Ledger</p>
-                    <Button variant="link" onClick={() => navigate("/lecturer/create-session")} className="text-accent text-[11px] font-bold uppercase mt-2">Initialize Session</Button>
-                  </div>
-                ) : (
-                  sessions.slice(0, 5).map((session) => (
-                    <motion.div
-                      key={session.id}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => navigate(`/lecturer/session/${session.id}`)}
-                      className="group p-4 rounded-[2rem] bg-card/40 backdrop-blur-xl border border-border shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/60 transition-all flex items-center gap-4"
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-accent/10 transition-colors">
-                         <span className="text-xs font-black text-foreground/40 group-hover:text-accent uppercase">{session.courses?.code?.substring(0,2)}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <p className="text-sm font-bold truncate pr-2">{session.courses?.code || 'Course'}</p>
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase">{formatSessionDate(session.created_at)}</span>
+            {/* Segmented Sessions: Active */}
+            {activeSessions.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  <h2 className="text-[10px] font-black text-foreground uppercase tracking-widest">Active Attendance</h2>
+                </div>
+                <div className="space-y-3">
+                  {activeSessions.map((session) => (
+                    <div key={session.id} className="relative">
+                      <motion.div
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(`/lecturer/session/${session.id}`)}
+                        className="group p-5 rounded-[2.5rem] bg-card/40 backdrop-blur-xl border border-border shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/60 transition-all flex items-center gap-4"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                           <Activity className="w-6 h-6 text-accent" />
                         </div>
-                        <p className="text-[11px] text-muted-foreground mb-2 truncate font-medium">{session.topic || 'General Lecture'}</p>
-                        <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate pr-10">{session.courses?.code || 'Course'}</p>
+                          <p className="text-[11px] text-muted-foreground mb-2 truncate font-medium">{session.topic || 'Monitoring Attendance'}</p>
                           <div className="flex items-center gap-2">
-                             <div className="flex -space-x-2">
-                                {[1,2,3].map(i => (
-                                  <div key={i} className="w-5 h-5 rounded-full border-2 border-background bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                                     <User className="w-2.5 h-2.5 text-zinc-400" />
-                                  </div>
-                                ))}
-                             </div>
-                             <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">
-                                {session.present} Attended
+                             <span className="text-[10px] text-accent font-black uppercase tracking-tighter">
+                                {session.present} LIVE NOW
                              </span>
                           </div>
-                          <div className={`px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tighter ${
-                            calculatePercentage(session.present, session.total) >= 75 
-                            ? "bg-accent/10 border-accent/20 text-accent" 
-                            : "bg-warning/10 border-warning/20 text-warning"
-                          }`}>
-                            {calculatePercentage(session.present, session.total)}%
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-300" />
+                      </motion.div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSession(session);
+                          setIsActionsOpen(true);
+                        }}
+                        className="absolute top-4 right-12 p-3 rounded-2xl bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 transition-all z-20"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Segmented Sessions: Recent */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                <Calendar className="w-3 h-3 text-muted-foreground" />
+                <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Recent Ledger</h2>
+              </div>
+              <div className="space-y-3">
+                {recentSessions.length === 0 ? (
+                  <div className="p-10 text-center bg-card/10 backdrop-blur-md rounded-[2.5rem] border border-dashed border-border/50">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">No recent sessions found</p>
+                  </div>
+                ) : (
+                  recentSessions.slice(0, 8).map((session) => (
+                    <div key={session.id} className="relative">
+                      <motion.div
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(`/lecturer/session/${session.id}`)}
+                        className="group p-4 rounded-[2rem] bg-card/20 backdrop-blur-xl border border-border/50 shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/40 transition-all flex items-center gap-4"
+                      >
+                        <div className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-accent/10 transition-colors">
+                           <span className="text-[10px] font-black text-foreground/40 uppercase">{session.courses?.code?.substring(0,2)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <p className="text-sm font-bold truncate pr-10">{session.courses?.code || 'Course'}</p>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{formatSessionDate(session.created_at)}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mb-2 truncate font-medium">{session.topic || 'General Lecture'}</p>
+                          <div className="flex items-center justify-between">
+                             <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">
+                                {session.present} Attended ({calculatePercentage(session.present, session.total)}%)
+                             </span>
                           </div>
                         </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-accent group-hover:translate-x-1 transition-all" />
-                    </motion.div>
+                      </motion.div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSession(session);
+                          setIsActionsOpen(true);
+                        }}
+                        className="absolute top-3 right-3 p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-accent transition-all z-10 border border-border/50"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -204,11 +244,11 @@ const LecturerDashboard = () => {
             animate={{ opacity: 1 }} 
             className="px-5 relative z-10"
           >
-            <h2 className="text-xl font-bold font-heading mb-6 tracking-tight px-1">Detailed Analytics</h2>
+            <h2 className="text-xl font-bold font-heading mb-6 tracking-tight px-1 text-foreground/80">Faculty Analytics</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-6 rounded-[2.5rem] bg-card border border-border text-center shadow-lg">
                 <p className="text-3xl font-bold text-accent font-heading">{stats.avgRate}%</p>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Avg. Attendance</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Avg. Presence</p>
               </div>
               <div className="p-6 rounded-[2.5rem] bg-card border border-border text-center shadow-lg">
                 <p className="text-3xl font-bold text-foreground font-heading">{sessions.length}</p>
@@ -236,51 +276,50 @@ const LecturerDashboard = () => {
           >
             <h2 className="text-xl font-bold font-heading mb-6 tracking-tight px-1 text-foreground/80">Staff Information</h2>
             <div className="p-6 rounded-[2.5rem] bg-card/60 backdrop-blur-3xl border border-border shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl rounded-full" />
-              
-              <div className="flex flex-col items-center mb-8">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner overflow-hidden">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-10 h-10 text-primary" />
-                    )}
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-accent flex items-center justify-center border-4 border-card">
-                     <ShieldCheck className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold font-heading mt-4">{profile?.full_name}</h3>
-                <p className="text-xs font-bold text-accent uppercase tracking-widest mt-1 italic">{profile?.department}</p>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  { label: "Staff ID", value: profile?.staff_id, icon: LogOut },
-                  { label: "Faculty", value: profile?.faculty, icon: Users },
-                  { label: "Level", value: profile?.level, icon: BarChart3 },
-                  { label: "Courses", value: stats.courseCount, icon: BookOpen },
-                ].map(({ label, value, icon: Icon }) => (
-                  <div key={label} className="flex items-center justify-between p-4 rounded-2xl bg-background/40 border border-border/50 group hover:border-accent/30 transition-all">
-                    <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
-                          <Icon className="w-4 h-4 text-zinc-500 group-hover:text-accent" />
-                       </div>
-                       <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{label}</span>
+               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl rounded-full" />
+               <div className="flex flex-col items-center mb-8">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 border border-border flex items-center justify-center overflow-hidden">
+                       {profile?.avatar_url ? (
+                         <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                       ) : (
+                         <User className="w-10 h-10 text-muted-foreground" />
+                       )}
                     </div>
-                    <span className="text-sm font-bold tracking-tight">{value}</span>
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-accent flex items-center justify-center border-4 border-card shadow-lg">
+                       <ShieldCheck className="w-4 h-4 text-white" />
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-xl font-bold font-heading mt-4">{profile?.full_name}</h3>
+                  <p className="text-xs font-bold text-accent uppercase tracking-widest mt-1">{profile?.department}</p>
+               </div>
 
-              <Button 
-                onClick={() => setIsLogoutOpen(true)}
-                variant="destructive"
-                className="w-full mt-8 h-14 rounded-2xl font-bold uppercase tracking-widest text-[11px]"
-              >
-                Terminate Session
-              </Button>
+               <div className="space-y-3">
+                  {[
+                    { label: "Staff ID", value: profile?.staff_id, icon: User },
+                    { label: "Faculty", value: profile?.faculty, icon: Users },
+                    { label: "Level", value: profile?.level, icon: BarChart3 },
+                    { label: "Unit", value: "Departmental Board", icon: BookOpen },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="flex items-center justify-between p-4 rounded-2xl bg-background/40 border border-border/50 group hover:border-accent/30 transition-all">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+                            <Icon className="w-4 h-4 text-zinc-500 group-hover:text-accent" />
+                         </div>
+                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{label}</span>
+                      </div>
+                      <span className="text-sm font-bold tracking-tight">{value}</span>
+                    </div>
+                  ))}
+               </div>
+
+               <Button 
+                 onClick={() => setIsLogoutOpen(true)}
+                 variant="ghost" 
+                 className="w-full mt-8 h-12 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-destructive/10 text-destructive border border-destructive/20 transition-colors"
+               >
+                 <LogOut className="w-3.5 h-3.5 mr-2" /> Log Out
+               </Button>
             </div>
           </motion.div>
         )}
@@ -302,6 +341,15 @@ const LecturerDashboard = () => {
         isOpen={isLogoutOpen} 
         onClose={() => setIsLogoutOpen(false)}
         onConfirm={handleLogout}
+      />
+
+      <SessionActionsDialog 
+        isOpen={isActionsOpen}
+        onClose={() => setIsActionsOpen(false)}
+        session={selectedSession}
+        onUpdated={() => {
+          // Data refreshes via hook realtime/on-demand
+        }}
       />
     </div>
   );

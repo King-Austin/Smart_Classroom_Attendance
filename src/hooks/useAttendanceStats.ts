@@ -24,13 +24,12 @@ export const useAttendanceStats = (studentId: string | undefined) => {
 
         if (!enrollments) return;
 
-        // 2. Get all sessions for these courses
+        // 2. Get all sessions for these courses (remove 'completed' filter to include active ones)
         const courseIds = enrollments.map(e => e.course_id);
         const { data: sessions } = await supabase
           .from("attendance_sessions")
-          .select("id, course_id")
-          .in("course_id", courseIds)
-          .eq("status", "completed");
+          .select("id, course_id, status")
+          .in("course_id", courseIds);
 
         // 3. Get all records for this student
         const { data: records } = await supabase
@@ -77,11 +76,17 @@ export const useAttendanceStats = (studentId: string | undefined) => {
 
     fetchStats();
 
+    // Subscribe to both records and sessions for real-time updates
     const channel = supabase
       .channel(`attendance-stats-${studentId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'attendance_records', filter: `student_id=eq.${studentId}` },
+        { event: '*', schema: 'public', table: 'attendance_records', filter: `student_id=eq.${studentId}` },
+        () => fetchStats()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance_sessions' },
         () => fetchStats()
       )
       .subscribe();

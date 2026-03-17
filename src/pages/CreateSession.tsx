@@ -18,6 +18,7 @@ const CreateSession = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   
   const [form, setForm] = useState({
     level: "",
@@ -31,8 +32,19 @@ const CreateSession = () => {
   });
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        if (data) setProfile(data);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
     const fetchCourses = async () => {
-      if (!form.level || !form.semester) {
+      if (!form.level || !form.semester || !profile?.department) {
         setCourses([]);
         return;
       }
@@ -42,13 +54,13 @@ const CreateSession = () => {
         .select("*")
         .eq("level", form.level)
         .eq("semester", form.semester)
-        .eq("department", DEFAULT_DEPARTMENT);
+        .eq("department", profile.department);
       
       if (data) setCourses(data);
       setLoading(false);
     };
     fetchCourses();
-  }, [form.level, form.semester]);
+  }, [form.level, form.semester, profile]);
 
   const updateForm = (key: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));

@@ -65,38 +65,38 @@ export const ManualEntry = ({ sessionId, onAdded, existingRecords }: ManualEntry
   };
 
   return (
-    <div className="space-y-2 mb-6">
-      <div className="flex gap-2 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 shadow-inner focus-within:border-accent/40 transition-all">
+    <div className="space-y-3 mb-8">
+      <div className="flex gap-2 p-1.5 rounded-2xl bg-card border border-border shadow-sm focus-within:border-accent/40 transition-all focus-within:shadow-[0_0_15px_rgba(16,185,129,0.05)]">
         <Input
           value={manualReg}
           onChange={(e) => setManualReg(e.target.value)}
-          placeholder="Reg Number..."
-          className="h-9 bg-transparent border-none text-zinc-100 text-xs focus-visible:ring-0 placeholder:text-zinc-600 flex-1"
+          placeholder="Enter Registration Number..."
+          className="h-10 bg-transparent border-none text-foreground text-xs font-medium focus-visible:ring-0 placeholder:text-muted-foreground/50 flex-1 uppercase"
         />
         <Button 
           onClick={handleSearchStudent} 
           disabled={searching} 
-          className="h-9 px-4 rounded-lg bg-accent hover:bg-accent/90 text-black font-bold text-[10px] uppercase"
+          className="h-10 px-5 rounded-xl bg-zinc-950 dark:bg-white dark:text-zinc-950 text-white font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all"
         >
-          {searching ? "..." : "Search"}
+          {searching ? "Searching..." : "Search"}
         </Button>
       </div>
 
       {foundStudent && (
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="p-3 rounded-xl bg-accent/5 border border-accent/20 flex items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-3xl bg-accent/5 border border-accent/20 flex items-center gap-4 shadow-sm"
         >
-           <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-              <UserPlus className="w-4 h-4" />
+           <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+              <UserPlus className="w-5 h-5" />
            </div>
            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{foundStudent.full_name}</p>
-              <p className="text-[9px] text-zinc-500 font-medium">{foundStudent.reg_number}</p>
+              <p className="text-sm font-bold text-foreground truncate">{foundStudent.full_name}</p>
+              <p className="text-[10px] text-accent font-black tracking-widest uppercase opacity-70">{foundStudent.reg_number}</p>
            </div>
-           <Button onClick={handleManualAdd} size="sm" className="h-7 rounded-lg bg-accent text-black font-bold text-[9px] uppercase">
-             Add
+           <Button onClick={handleManualAdd} size="sm" className="h-9 px-4 rounded-xl bg-accent text-white font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-accent/20">
+             Confirm
            </Button>
         </motion.div>
       )}

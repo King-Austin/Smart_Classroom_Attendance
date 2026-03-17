@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32"
+    namespace = "com.smartattendance.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32"
+        applicationId "com.smartattendance.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

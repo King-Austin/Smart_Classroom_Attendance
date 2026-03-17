@@ -16,6 +16,10 @@ import LiveSession from "./pages/LiveSession";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
+import { AppNavigationHandler } from "./components/AppNavigationHandler";
+import { OfflineStatus } from "./components/OfflineStatus";
+import { MobileImmersiveHandler } from "./components/MobileImmersiveHandler";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -25,6 +29,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AppNavigationHandler />
+        <OfflineStatus />
+        <MobileImmersiveHandler />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />

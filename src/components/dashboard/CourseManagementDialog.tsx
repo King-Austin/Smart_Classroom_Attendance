@@ -13,6 +13,7 @@ interface CourseManagementDialogProps {
   studentId: string | undefined;
   level: string | undefined;
   semester: string | undefined;
+  department: string | undefined;
   currentCourseIds: string[];
 }
 
@@ -22,6 +23,7 @@ export const CourseManagementDialog = ({
   studentId,
   level,
   semester,
+  department,
   currentCourseIds,
 }: CourseManagementDialogProps) => {
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
@@ -34,17 +36,18 @@ export const CourseManagementDialog = ({
       setSelectedIds(currentCourseIds);
       fetchAvailableCourses();
     }
-  }, [isOpen, level, semester]);
+  }, [isOpen, level, semester, department]);
 
   const fetchAvailableCourses = async () => {
-    if (!level || !semester) return;
+    if (!level || !semester || !department) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("courses")
         .select("*")
         .eq("level", level)
-        .eq("semester", semester);
+        .eq("semester", semester)
+        .eq("department", department);
       
       if (error) throw error;
       setAvailableCourses(data || []);

@@ -44,3 +44,15 @@ export const formatSessionDate = (date: string | Date): string => {
   }
   return formatDate(d);
 };
+
+/**
+ * Calculates duration between two dates in minutes.
+ */
+export const calculateDuration = (start: string | Date, end: string | Date): string => {
+  const s = typeof start === 'string' ? new Date(start) : start;
+  const e = typeof end === 'string' ? new Date(end) : end;
+  const diff = Math.floor((e.getTime() - s.getTime()) / 60000);
+  
+  if (diff < 60) return `${diff}m`;
+  return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+};
