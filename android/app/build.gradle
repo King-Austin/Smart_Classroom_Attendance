@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "Smart Attendance"
+    namespace = "app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.lovable.f866dfb1611d40e5bdc8cd4a4c86fc32"
@@ -21,6 +21,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 }
 
