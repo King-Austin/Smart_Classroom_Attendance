@@ -26,6 +26,7 @@ jobs:
       - name: Build Web App
         run: npm run build
 
+      # Java version 17 setup for Android Build compatibility
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
