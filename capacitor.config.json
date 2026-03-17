@@ -5,7 +5,8 @@
   "plugins": {
     "extConfig": {},
     "CapacitorUpdater": {
-      "appId": "com.smartattendance.app"
+      "appId": "com.smartattendance.app",
+      "autoUpdate": true
     }
   }
 }

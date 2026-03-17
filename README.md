@@ -1,73 +1,94 @@
-# Welcome to your Lovable project
+# 🎓 Smart Campus Presence
 
-## Project info
+**Smart Campus Presence** is a high-integrity, real-time attendance management system designed specifically for modern engineering faculties (starting with ECE). It solves the problem of "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🚀 Key Features
 
-There are several ways of editing your application.
+### 🛡️ Multi-Factor Verification (The "Protocol")
+*   **Face Signature (ImageSight)**: Uses advanced face enrollment with liveness detection (Center, Right, Left) to ensure only the physical student can sign in.
+*   **Geo-Fencing**: Lecturers set a GPS perimeter. Attendance is only valid if the student is physically within the classroom boundaries.
+*   **BLE Proximity**: Uses Bluetooth Low Energy beacons to verify that the student's device is within physical range of the lecturer's broadcasting node.
+*   **Device Binding**: Prevents students from signing in for peers by locking their account to a unique hardware ID during the first verification.
 
-**Use Lovable**
+### 📊 Role-Based Dashboards
+*   **Student Portal**: Real-time attendance scoreboard, academic ranking (Top % of department), course management, and a secure "Identity Vault" for biometric records.
+*   **Lecturer Portal**: Protocol Launchpad for creating sessions, real-time "Attendance Feed" of arriving students, and automated data visualization for faculty audits.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### ⚡ Technical Edge
+*   **Real-time Synchronization**: Powered by Supabase Realtime for instant updates between lecturers and students.
+*   **OTA (Over-The-Air) Updates**: Integrated with CapGo to push UI/Logic changes directly to installed Android/iOS apps without requiring store updates.
+*   **Haptic Feedback**: Deep integration with mobile haptics for a premium, tactile user experience.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🛠️ Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+*   **Frontend**: React (Vite) + TypeScript
+*   **Mobile**: CapacitorJS (Native Bridge)
+*   **Backend & DB**: Supabase (PostgreSQL + Auth + Realtime + Storage)
+*   **Styling**: Tailwind CSS + Shadcn/UI (Custom Premium Dark Theme)
+*   **Animations**: Framer Motion
+*   **State Mgmt**: TanStack Query (React Query)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 📦 Getting Started for Collaborators
 
+### 1. Prerequisite Setup
+*   **Node.js**: v20+
+*   **Capacitor CLI**: `npm install -g @capacitor/cli`
+*   **Android Studio**: For native builds.
+
+### 2. Installation
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+git clone <repo-url>
+cd smart-campus-presence
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### 3. Environment Config
+Create a `.env` file in the root with your credentials:
+```env
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+CAPGO_TOKEN=your_capgo_api_key
+CAPGO_APP_ID=com.smartattendance.app
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 4. Local Development
+```sh
+# Run in browser
+npm run dev
 
-**Use GitHub Codespaces**
+# Run on Android with Live Reload
+npx cap run android --livereload
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🚢 Deployment & OTA Strategy
 
-This project is built with:
+This project uses a **Hybrid Deployment Model**:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1.  **Native Shell**: Built once as an APK/AAB and installed on devices.
+2.  **Web OTA**: Daily updates and bug fixes are pushed via CapGo.
+    *   **Manual Update**: Run `npm run ship` to push local changes to all users instantly.
+    *   **Automated (CI/CD)**: Every push to `main` triggers a GitHub Action to deploy the new bundle.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 🤝 Project Structure
+*   `/src/components`: UI components, verification modules (LivenessScanner), and dashboards.
+*   `/src/hooks`: Custom hooks for real-time stats, profile management, and session tracking.
+*   `/src/pages`: Higher-level route components (Dashboards, Register, Session Launch).
+*   `/supabase/functions`: Edge functions for backend-heavy processing.
+*   `/.github/workflows`: CI/CD pipelines for OTA and builds.
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 📜 Documentation & Guidelines
+Please follow the **Atomic UI** pattern. Ensure all new components respect the dark-themed premium design system and use `Haptics` for meaningful interactions.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Smart Campus Presence v2.4 (Production Ready)**

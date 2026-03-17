@@ -24,4 +24,7 @@ jobs:
         run: npm run build
 
       - name: Upload to CapGo
-        run: npx @capgo/cli@latest upload --apikey ${{ secrets.CAPGO_TOKEN }} --app-id ${{ secrets.CAPGO_APP_ID }} --bundle dist
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+          CAPGO_APP_ID: ${{ secrets.CAPGO_APP_ID }}
+        run: npx @capgo/cli@latest upload --apikey $CAPGO_TOKEN --app-id $CAPGO_APP_ID --bundle dist
