@@ -100,7 +100,7 @@ const CreateSession = () => {
         ble_token: bleToken,
         lecturer_lat: lat,
         lecturer_lng: lng,
-        geo_radius_meters: 50,
+        geo_radius_meters: 150,
         status: SESSION_STATUS.ACTIVE
       }).select().single();
 

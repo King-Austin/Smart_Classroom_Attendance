@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import { AppNavigationHandler } from "./components/AppNavigationHandler";
 import { OfflineStatus } from "./components/OfflineStatus";
 import { MobileImmersiveHandler } from "./components/MobileImmersiveHandler";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
       <TooltipProvider>
       <Toaster />
       <Sonner />
+      <Analytics />
       <BrowserRouter>
         <AppNavigationHandler />
         <OfflineStatus />

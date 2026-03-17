@@ -36,19 +36,19 @@ const AttendanceVerification = () => {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
   // We need a ref to handle the promise for the scanner
-  const livenessResolver = useRef<((value: string) => void) | null>(null);
+  const livenessResolver = useRef<((value: string[]) => void) | null>(null);
 
-  const requestLiveness = (): Promise<string> => {
+  const requestLiveness = (): Promise<string[]> => {
     setShowScanner(true);
     return new Promise((resolve) => {
       livenessResolver.current = resolve;
     });
   };
 
-  const handleLivenessComplete = (base64: string) => {
+  const handleLivenessComplete = (images: string[]) => {
     setShowScanner(false);
     if (livenessResolver.current) {
-      livenessResolver.current(base64);
+      livenessResolver.current(images);
     }
   };
   
@@ -93,16 +93,26 @@ const AttendanceVerification = () => {
       updateChecklist("init", "completed", "Secure session established");
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 1. GPS Verification
-      updateChecklist("gps", "processing", "Fetching location (Timeout: 15s)...");
+      // 1. GPS Verification (Layer 1 Soft-Gate)
+      updateChecklist("gps", "processing", "Synchronizing GPS Nodes...");
       try {
-        const position = await Geolocation.getCurrentPosition({
+        let position = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
+          timeout: 10000,
+          maximumAge: 0 // Force fresh refresh
         });
 
-        updateChecklist("gps", "processing", "Calculating distance to lecture hall...");
+        // Retry if accuracy is poor (>100m)
+        if (position.coords.accuracy > 100) {
+          updateChecklist("gps", "processing", "Poor accuracy. Recalibrating...");
+          await new Promise(r => setTimeout(r, 2000));
+          position = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        }
+
         const distance = calculateDistance(
           position.coords.latitude,
           position.coords.longitude,
@@ -110,15 +120,17 @@ const AttendanceVerification = () => {
           sessionData.lecturer_lng || 0
         );
 
-        const isDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const maxRadius = isDevice ? (sessionData.geo_radius_meters || 50) : 500;
+        // Soft-Gate: 150m limit. We subtract accuracy to give the user the benefit of the doubt.
+        // If distance - accuracy < 150, we assume they could be inside.
+        const effectiveDistance = Math.max(0, distance - (position.coords.accuracy / 2));
+        const GPS_SOFT_LIMIT = 150;
 
-        if (distance > maxRadius) {
-          updateChecklist("gps", "failed", `Distance Error: ${Math.round(distance)}m away`);
-          throw new Error(`Out of range. You are ${Math.round(distance)}m away from the lecture hall.`);
+        if (effectiveDistance > GPS_SOFT_LIMIT) {
+          updateChecklist("gps", "failed", `Geo-Bypass: ${Math.round(distance)}m outside zone`);
+          throw new Error(`Out of range. You are ${Math.round(distance)}m from the hall (Limit: 150m).`);
         }
         
-        updateChecklist("gps", "completed", `Location Sync: ${Math.round(distance)}m from source`);
+        updateChecklist("gps", "completed", `GPS Verified: ~${Math.round(effectiveDistance)}m deviation`);
       } catch (gpsError: any) {
         updateChecklist("gps", "failed", gpsError.message || "GPS Timeout");
         throw gpsError;
@@ -153,7 +165,8 @@ const AttendanceVerification = () => {
 
       // 3. Face Identity
       updateChecklist("face", "processing", "Awaiting biometric signature...");
-      const photoBase64 = await requestLiveness();
+      const images = await requestLiveness();
+      const photoBase64 = images[0]; // Take primary center-face for ledger
       setCapturedPhoto(photoBase64);
       updateChecklist("face", "completed", "Identity verified successfully");
       await Haptics.impact({ style: ImpactStyle.Light });

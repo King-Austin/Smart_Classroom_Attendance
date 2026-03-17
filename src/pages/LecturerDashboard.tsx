@@ -98,75 +98,94 @@ const LecturerDashboard = () => {
               </motion.button>
             </div>
 
-            {/* Performance Overview */}
-            <div className="p-6 rounded-[2.5rem] bg-zinc-900 text-white border border-zinc-800 relative overflow-hidden shadow-2xl">
-               <div className="absolute top-0 right-0 p-6 opacity-10">
-                  <Activity className="w-20 h-20 text-accent" />
-               </div>
-               <div className="relative z-10 flex flex-col gap-6">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] mb-1">Average Presence</p>
-                      <h2 className="text-4xl font-bold font-heading">{stats.avgRate}%</h2>
+            {/* Performance Overview - Advanced Glassmorphism */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-accent/20 blur-[100px] rounded-full opacity-0 group-hover:opacity-40 transition-opacity" />
+              <div className="p-8 rounded-[3rem] bg-zinc-900/90 text-white border border-zinc-800 backdrop-blur-3xl relative overflow-hidden shadow-2xl">
+                 {/* Internal Glass Highlight */}
+                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                 
+                 <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <Activity className="w-32 h-32 text-accent" />
+                 </div>
+                 
+                 <div className="relative z-10 flex flex-col gap-10">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2 leading-none">Global Presence Metric</p>
+                        <h2 className="text-5xl font-black font-heading tracking-tighter tabular-nums">{stats.avgRate}%</h2>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 leading-none">Network Reach</p>
+                         <p className="text-2xl font-black tabular-nums">{stats.totalStudents}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Total Students</p>
-                       <p className="text-xl font-bold">{stats.totalStudents}</p>
+                    
+                    <div className="space-y-3">
+                      <div className="h-3 bg-zinc-800/50 rounded-full overflow-hidden border border-white/5 p-[2px]">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stats.avgRate}%` }}
+                          className="h-full bg-accent shadow-[0_0_20px_rgba(16,185,129,0.8)] rounded-full" 
+                        />
+                      </div>
+                      <div className="flex justify-between px-1">
+                        <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Protocol Floor: 0%</span>
+                        <span className="text-[8px] font-bold text-accent uppercase tracking-widest">Target: 100%</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${stats.avgRate}%` }}
-                      className="h-full bg-accent shadow-[0_0_15px_rgba(16,185,129,0.5)]" 
-                    />
-                  </div>
-                  
-                  <div className="flex justify-between gap-4">
-                     <div className="flex-1 p-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                        <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Courses</p>
-                        <p className="text-lg font-bold font-heading">{stats.courseCount}</p>
-                     </div>
-                     <div className="flex-1 p-3 rounded-2xl bg-accent/10 border border-accent/20">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <TrendingUp className="w-3 h-3 text-accent" />
-                          <p className="text-[9px] font-bold text-accent uppercase tracking-widest">Growth</p>
-                        </div>
-                        <p className="text-lg font-bold font-heading">+12%</p>
-                     </div>
-                  </div>
-               </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Active Nodes</p>
+                          <p className="text-xl font-black font-heading tabular-nums">{stats.courseCount}</p>
+                       </div>
+                       <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 backdrop-blur-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <TrendingUp className="w-3.5 h-3.5 text-accent" />
+                            <p className="text-[9px] font-black text-accent uppercase tracking-[0.2em]">Efficiency</p>
+                          </div>
+                          <p className="text-xl font-black font-heading tabular-nums">+12.4%</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
             </div>
 
             {/* Segmented Sessions: Active */}
             {activeSessions.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                  <h2 className="text-[10px] font-black text-foreground uppercase tracking-widest">Active Attendance</h2>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                   <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                      <h2 className="text-[10px] font-black text-foreground uppercase tracking-[0.4em]">Live Verification Nodes</h2>
+                   </div>
+                   <span className="text-[10px] font-bold text-accent/60 uppercase tracking-widest tabular-nums">{activeSessions.length} Active</span>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {activeSessions.map((session) => (
-                    <div key={session.id} className="relative">
+                    <div key={session.id} className="relative group">
                       <motion.div
                         whileTap={{ scale: 0.98 }}
                         onClick={() => navigate(`/lecturer/session/${session.id}`)}
-                        className="group p-5 rounded-[2.5rem] bg-card/40 backdrop-blur-xl border border-border shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/60 transition-all flex items-center gap-4"
+                        className="p-6 rounded-[2.5rem] bg-card/60 backdrop-blur-2xl border border-border shadow-lg cursor-pointer hover:border-accent/40 group-hover:bg-card transition-all flex items-center gap-5"
                       >
-                        <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                           <Activity className="w-6 h-6 text-accent" />
+                        <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0 relative">
+                           <Activity className="w-7 h-7 text-accent" />
+                           <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-4 border-card" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate pr-10">{session.courses?.code || 'Course'}</p>
-                          <p className="text-[11px] text-muted-foreground mb-2 truncate font-medium">{session.topic || 'Monitoring Attendance'}</p>
-                          <div className="flex items-center gap-2">
-                             <span className="text-[10px] text-accent font-black uppercase tracking-tighter">
-                                {session.present} LIVE NOW
-                             </span>
+                          <p className="text-base font-black tracking-tight mb-1 truncate pr-12">{session.courses?.code || 'Course'}</p>
+                          <p className="text-xs text-muted-foreground mb-3 truncate font-bold opacity-70 italic">{session.topic || 'Monitoring Attendance'}</p>
+                          <div className="flex items-center gap-3">
+                             <div className="px-3 py-1 rounded-full bg-accent/10 border border-accent/30">
+                                <span className="text-[9px] text-accent font-black uppercase tracking-widest tabular-nums">
+                                   {session.present} Pulse Detected
+                                </span>
+                             </div>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-zinc-300" />
+                        <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-accent group-hover:translate-x-1 transition-all" />
                       </motion.div>
                       <button 
                         onClick={(e) => {
@@ -174,9 +193,9 @@ const LecturerDashboard = () => {
                           setSelectedSession(session);
                           setIsActionsOpen(true);
                         }}
-                        className="absolute top-4 right-12 p-3 rounded-2xl bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 transition-all z-20"
+                        className="absolute top-6 right-14 p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-accent hover:bg-accent/10 transition-all z-20"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
@@ -184,37 +203,51 @@ const LecturerDashboard = () => {
               </div>
             )}
 
-            {/* Segmented Sessions: Recent */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 px-1">
-                <Calendar className="w-3 h-3 text-muted-foreground" />
-                <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Recent Ledger</h2>
+            {/* Segmented Sessions: Recent Ledger (System Console Aesthetic) */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em]">Historical Archival Ledger</h2>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {recentSessions.length === 0 ? (
-                  <div className="p-10 text-center bg-card/10 backdrop-blur-md rounded-[2.5rem] border border-dashed border-border/50">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">No recent sessions found</p>
+                  <div className="p-16 text-center bg-card/10 backdrop-blur-md rounded-[3rem] border border-dashed border-border/50">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">End of Transmission</p>
                   </div>
                 ) : (
                   recentSessions.slice(0, 8).map((session) => (
-                    <div key={session.id} className="relative">
+                    <div key={session.id} className="relative group">
                       <motion.div
-                        whileTap={{ scale: 0.98 }}
+                        whileTap={{ scale: 0.99 }}
                         onClick={() => navigate(`/lecturer/session/${session.id}`)}
-                        className="group p-4 rounded-[2rem] bg-card/20 backdrop-blur-xl border border-border/50 shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/40 transition-all flex items-center gap-4"
+                        className="p-5 rounded-[2.5rem] bg-card/30 backdrop-blur-xl border border-border/50 shadow-sm cursor-pointer hover:border-accent/40 hover:bg-card/50 transition-all flex items-center gap-5"
                       >
-                        <div className="w-11 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:bg-accent/10 transition-colors">
-                           <span className="text-[10px] font-black text-foreground/40 uppercase">{session.courses?.code?.substring(0,2)}</span>
+                        <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-border flex items-center justify-center flex-shrink-0 group-hover:border-accent/30 transition-colors overflow-hidden">
+                           <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                           <span className="text-[10px] font-black text-foreground/40 group-hover:text-accent transition-colors uppercase relative z-10">{session.courses?.code?.substring(0,2)}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <p className="text-sm font-bold truncate pr-10">{session.courses?.code || 'Course'}</p>
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase">{formatSessionDate(session.created_at)}</span>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-sm font-black tracking-tight truncate pr-12">{session.courses?.code || 'Course'}</p>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-60 tabular-nums">{formatSessionDate(session.created_at)}</span>
                           </div>
-                          <p className="text-[11px] text-muted-foreground mb-2 truncate font-medium">{session.topic || 'General Lecture'}</p>
+                          
+                          {/* Mini Performance Bar */}
+                          <div className="flex items-center gap-3 mb-2">
+                             <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-accent/60" 
+                                  style={{ width: `${calculatePercentage(session.present, session.total)}%` }}
+                                />
+                             </div>
+                             <span className="text-[10px] text-accent font-black tabular-nums">
+                                {calculatePercentage(session.present, session.total)}%
+                             </span>
+                          </div>
+
                           <div className="flex items-center justify-between">
-                             <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">
-                                {session.present} Attended ({calculatePercentage(session.present, session.total)}%)
+                             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest tabular-nums">
+                                {session.present} Enrolled / {session.total || '---'} Total
                              </span>
                           </div>
                         </div>
@@ -225,9 +258,9 @@ const LecturerDashboard = () => {
                           setSelectedSession(session);
                           setIsActionsOpen(true);
                         }}
-                        className="absolute top-3 right-3 p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-accent transition-all z-10 border border-border/50"
+                        className="absolute top-5 right-5 p-3 rounded-2xl bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 hover:text-accent transition-all z-10 border border-transparent hover:border-border"
                       >
-                        <Edit2 className="w-3 h-3" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))

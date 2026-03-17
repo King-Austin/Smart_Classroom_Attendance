@@ -1,4 +1,4 @@
-# 🎓 Smart Campus Presence
+# 🎓 Smart Attendance
 
 **Smart Campus Presence** is a high-integrity, real-time attendance management system designed specifically for modern engineering faculties (starting with ECE). It solves the problem of "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
 

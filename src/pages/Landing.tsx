@@ -15,7 +15,7 @@ const Landing = () => {
       </div>
 
       <div className="safe-top" />
-      
+
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center relative z-10">
         <motion.div
@@ -72,7 +72,7 @@ const Landing = () => {
             <GraduationCap className="w-5 h-5 mr-3" />
             Join as Student
           </Button>
-          
+
           <Button
             onClick={() => navigate("/register/lecturer")}
             variant="outline"
