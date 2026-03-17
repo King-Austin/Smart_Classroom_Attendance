@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useSessionData } from "@/hooks/useSessionData";
 import { calculatePercentage } from "@/lib/utils";
-import { formatTime } from "@/lib/date";
+import { PresenceLoader } from "@/components/PresenceLoader";
+import { formatSessionDate } from "@/lib/date";
 import { getAttendanceMethod } from "@/lib/attendance";
 import { SESSION_STATUS, ATTENDANCE_STATUS } from "@/constants";
 
@@ -49,8 +50,8 @@ const LiveSession = () => {
 
   if (loading && !session) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
-         <Loader2 className="w-8 h-8 text-accent animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <PresenceLoader message="Synchronizing Live Feed..." />
       </div>
     );
   }

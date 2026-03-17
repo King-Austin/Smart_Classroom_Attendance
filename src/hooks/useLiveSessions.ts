@@ -25,13 +25,26 @@ export const useLiveSessions = (studentId: string | undefined) => {
             .select(`
               *,
               courses!inner(name, code),
-              lecturer:profiles!lecturer_id(full_name)
+              lecturer:profiles!lecturer_id(full_name),
+              attendance_records(
+                id,
+                student_id,
+                profiles!student_id(full_name, avatar_url)
+              )
             `)
             .eq("status", "active")
             .in("course_id", courseIds);
           
           if (error) throw error;
-          setSessions(data as any);
+
+          // Map the sessions to include has_marked and attendee_count
+          const enhancedSessions = (data as any[]).map(session => ({
+            ...session,
+            attendee_count: session.attendance_records?.length || 0,
+            has_marked: session.attendance_records?.some((r: any) => r.student_id === studentId) || false
+          }));
+
+          setSessions(enhancedSessions as any);
         }
       } catch (err) {
         console.error("useLiveSessions error:", err);
@@ -47,6 +60,11 @@ export const useLiveSessions = (studentId: string | undefined) => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'attendance_sessions' },
+        () => fetchSessions()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'attendance_records' },
         () => fetchSessions()
       )
       .subscribe();

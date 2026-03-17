@@ -1,12 +1,17 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Users, Clock, Search, User } from "lucide-react";
+import { 
+  ArrowLeft, Search, Filter, Download, User, CheckCircle2, 
+  XCircle, Clock, Calendar, BookOpen, UserCheck, ShieldCheck, ChevronRight
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatTime, formatDate } from "@/lib/date";
+import { ATTENDANCE_STATUS } from "@/constants";
+import { PresenceLoader } from "@/components/PresenceLoader";
 
 const AttendanceLedger = () => {
   const navigate = useNavigate();
@@ -74,18 +79,18 @@ const AttendanceLedger = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 pb-10">
+    <div className="min-h-screen bg-background pb-10">
       <div className="safe-top" />
       
       {/* Premium Background Accent */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#10b981]/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />
       </div>
 
       <div className="relative z-10">
         <div className="px-5 py-6 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-95">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20">
@@ -99,11 +104,11 @@ const AttendanceLedger = () => {
           className="px-5 max-w-2xl mx-auto"
         >
           {/* Session Info Card */}
-          <div className="p-6 rounded-3xl bg-zinc-900/50 border border-zinc-800/80 backdrop-blur-md mb-8 shadow-2xl">
-            <h1 className="text-2xl font-bold font-heading tracking-tight mb-2 text-white">
+          <div className="p-6 rounded-3xl bg-card border border-border backdrop-blur-md mb-8 shadow-2xl">
+            <h1 className="text-2xl font-bold font-heading tracking-tight mb-2">
               {session?.courses?.code}: {session?.courses?.name}
             </h1>
-            <div className="flex flex-wrap gap-4 items-center text-xs text-zinc-500 font-medium">
+            <div className="flex flex-wrap gap-4 items-center text-xs text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" /> {session?.profiles?.full_name}
               </span>
@@ -111,7 +116,7 @@ const AttendanceLedger = () => {
                 <Clock className="w-3.5 h-3.5" /> {session?.started_at && formatDate(session.started_at)}
               </span>
               <span className="flex items-center gap-1.5 text-accent font-bold">
-                <Users className="w-3.5 h-3.5" /> {students.length} Present
+                <UserCheck className="w-3.5 h-3.5" /> {students.length} Present
               </span>
             </div>
           </div>
@@ -133,9 +138,9 @@ const AttendanceLedger = () => {
           {/* Ledger List */}
           <div className="space-y-3">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 w-full rounded-2xl bg-zinc-900/50 border border-zinc-800 animate-pulse" />
-              ))
+              <div className="py-20 flex justify-center">
+                <PresenceLoader message="Decrypting Ledger..." />
+              </div>
             ) : filteredStudents.length === 0 ? (
               <div className="py-20 text-center rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/20">
                  <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">No matching records</p>

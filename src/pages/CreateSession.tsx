@@ -189,6 +189,7 @@ const CreateSession = () => {
                 <Switch
                   checked={form[key as keyof typeof form] as boolean}
                   onCheckedChange={(v) => updateForm(key, v)}
+                  disabled
                 />
               </div>
             ))}

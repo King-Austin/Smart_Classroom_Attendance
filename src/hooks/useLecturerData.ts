@@ -69,6 +69,24 @@ export const useLecturerData = (lecturerId: string | undefined) => {
     };
 
     fetchData();
+
+    const channel = supabase
+      .channel(`lecturer-data-${lecturerId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance_sessions', filter: `lecturer_id=eq.${lecturerId}` },
+        () => fetchData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance_records' },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [lecturerId]);
 
   return { sessions, stats, loading };

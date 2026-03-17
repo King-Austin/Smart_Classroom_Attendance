@@ -38,7 +38,11 @@ export const AttendanceFeed = ({ records }: AttendanceFeedProps) => {
               }`} />
 
               <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                 <User className="w-5 h-5 text-zinc-600" />
+                 {record.profiles?.avatar_url ? (
+                   <img src={record.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                 ) : (
+                   <User className="w-5 h-5 text-zinc-600" />
+                 )}
               </div>
               
               <div className="flex-1 min-w-0">

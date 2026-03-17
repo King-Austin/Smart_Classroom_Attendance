@@ -1,6 +1,8 @@
 import { Database } from "@/integrations/supabase/types";
 
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"] & {
+  bound_device_id?: string | null;
+};
 export type Course = Database["public"]["Tables"]["courses"]["Row"];
 export type Session = Database["public"]["Tables"]["attendance_sessions"]["Row"];
 export type AttendanceRecord = Database["public"]["Tables"]["attendance_records"]["Row"];
@@ -14,12 +16,21 @@ export interface SessionWithDetails extends Session {
   lecturer?: {
     full_name: string;
   };
+  has_marked?: boolean;
+  attendee_count?: number;
+  attendance_records?: {
+    profiles: {
+      full_name: string;
+      avatar_url: string | null;
+    };
+  }[];
 }
 
 export interface AttendanceRecordWithProfile extends AttendanceRecord {
   profiles?: {
     full_name: string;
     reg_number: string;
+    avatar_url: string | null;
   };
 }
 

@@ -26,7 +26,7 @@ export const useSessionData = (sessionId: string | undefined) => {
       // 2. Fetch Records
       const { data: recordsData, error: recordsError } = await supabase
         .from("attendance_records")
-        .select("*, profiles!student_id(full_name, reg_number)")
+        .select("*, profiles!student_id(full_name, reg_number, avatar_url)")
         .eq("session_id", sessionId)
         .order('created_at', { ascending: false });
       
@@ -66,7 +66,7 @@ export const useSessionData = (sessionId: string | undefined) => {
           // Fetch profile for the new record
           const { data: profile } = await supabase
             .from("profiles")
-            .select("full_name, reg_number")
+            .select("full_name, reg_number, avatar_url")
             .eq("id", payload.new.student_id)
             .single();
 

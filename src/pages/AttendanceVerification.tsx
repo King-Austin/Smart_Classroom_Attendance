@@ -14,6 +14,7 @@ import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/lib/geo";
 import { formatTime } from "@/lib/date";
+import LivenessScanner from "@/components/verification/LivenessScanner";
 
 type VerificationStepId = "init" | "face" | "gps" | "ble" | "upload" | "final";
 
@@ -31,12 +32,31 @@ const AttendanceVerification = () => {
   const [currentStep, setCurrentStep] = useState<"intro" | "checking" | "success" | "failed">("intro");
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+
+  // We need a ref to handle the promise for the scanner
+  const livenessResolver = useRef<((value: string) => void) | null>(null);
+
+  const requestLiveness = (): Promise<string> => {
+    setShowScanner(true);
+    return new Promise((resolve) => {
+      livenessResolver.current = resolve;
+    });
+  };
+
+  const handleLivenessComplete = (base64: string) => {
+    setShowScanner(false);
+    if (livenessResolver.current) {
+      livenessResolver.current(base64);
+    }
+  };
   
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
     { id: "init", label: "Security Protocol", status: "pending", message: "Awaiting initialization..." },
-    { id: "face", label: "Biometric Identity", status: "pending", message: "Face recognition required" },
     { id: "gps", label: "Geographical Sync", status: "pending", message: "Check campus proximity" },
     { id: "ble", label: "Proximity Mesh", status: "pending", message: "Scanning for lecturer beacon" },
+    { id: "face", label: "Biometric Identity", status: "pending", message: "Face recognition required" },
     { id: "upload", label: "Digital Signature", status: "pending", message: "Uploading encrypted data" },
   ]);
 
@@ -73,18 +93,7 @@ const AttendanceVerification = () => {
       updateChecklist("init", "completed", "Secure session established");
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 1. Face Identity
-      updateChecklist("face", "processing", "Capturing biometric signature...");
-      const photo = await CapCamera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera
-      });
-      updateChecklist("face", "completed", "Identity verified successfully");
-      await Haptics.impact({ style: ImpactStyle.Light });
-
-      // 2. GPS Verification
+      // 1. GPS Verification
       updateChecklist("gps", "processing", "Fetching location (Timeout: 15s)...");
       try {
         const position = await Geolocation.getCurrentPosition({
@@ -101,9 +110,8 @@ const AttendanceVerification = () => {
           sessionData.lecturer_lng || 0
         );
 
-        // Relax distance check for testing or PCs (User Agent check is simple but effective enough for this)
         const isDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const maxRadius = isDevice ? (sessionData.geo_radius_meters || 50) : 500; // Allow 500m for PC testing
+        const maxRadius = isDevice ? (sessionData.geo_radius_meters || 50) : 500;
 
         if (distance > maxRadius) {
           updateChecklist("gps", "failed", `Distance Error: ${Math.round(distance)}m away`);
@@ -117,14 +125,13 @@ const AttendanceVerification = () => {
       }
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 3. BLE Mesh (Optional Proximity)
+      // 2. BLE Mesh (Optional Proximity)
       updateChecklist("ble", "processing", "Establishing proximity mesh...");
       try {
         const isBleSupported = typeof navigator !== 'undefined' && 'bluetooth' in navigator;
         if (!isBleSupported) {
           updateChecklist("ble", "completed", "Proximity bypassed (Feature not supported)");
         } else {
-          // Attempt BLE scan
           await BleClient.initialize();
           let found = false;
           await BleClient.requestLEScan({}, (result) => {
@@ -144,10 +151,17 @@ const AttendanceVerification = () => {
       }
       await Haptics.impact({ style: ImpactStyle.Light });
 
+      // 3. Face Identity
+      updateChecklist("face", "processing", "Awaiting biometric signature...");
+      const photoBase64 = await requestLiveness();
+      setCapturedPhoto(photoBase64);
+      updateChecklist("face", "completed", "Identity verified successfully");
+      await Haptics.impact({ style: ImpactStyle.Light });
+
       // 4. Final Submission
       updateChecklist("upload", "processing", "Signing digital attendance ledger...");
       
-      const blob = await (await fetch(`data:image/jpeg;base64,${photo.base64String}`)).blob();
+      const blob = await (await fetch(`data:image/jpeg;base64,${photoBase64}`)).blob();
       const fileName = `${sessionData.id}/${user.id}_${Date.now()}.jpg`;
       
       await supabase.storage.from("attendance-verifications").upload(fileName, blob);
@@ -155,7 +169,7 @@ const AttendanceVerification = () => {
       const { error: recordError } = await supabase.from("attendance_records").insert({
         student_id: user.id,
         session_id: sessionId,
-        gps_lat: 0, // In production, grab latest from GPS step result
+        gps_lat: 0, 
         gps_lng: 0,
         face_score: 1.0,
         status: "verified"
@@ -179,49 +193,50 @@ const AttendanceVerification = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white selection:bg-accent/30 selection:text-white pb-safe">
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 tracking-tight pb-safe uppercase">
       <div className="safe-top" />
       
       {/* Background Glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#10b981]/15 blur-[120px] rounded-full" />
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />
       </div>
 
       <div className="relative z-10 px-6 max-w-sm mx-auto pt-4">
         {currentStep === "intro" && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-8">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-zinc-400 mb-8 text-sm font-medium">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-muted-foreground mb-8 text-xs font-bold uppercase tracking-widest">
               <ArrowLeft className="w-4 h-4" /> Exit
             </button>
 
-            <div className="flex flex-col items-center text-center mb-10">
-              <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 shadow-2xl">
-                <ShieldCheck className="w-10 h-10 text-[#10b981]" />
+            <div className="flex flex-col items-center text-center mb-10 text-foreground/80">
+              <div className="w-20 h-20 rounded-3xl bg-card border border-border flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl">
+                <ShieldCheck className="w-10 h-10 text-accent" />
               </div>
-              <p className="text-[#10b981] text-[10px] font-bold tracking-[0.3em] uppercase mb-2">Protocol Verified</p>
-              <h1 className="text-3xl font-bold font-heading mb-3 tracking-tight">Security Check</h1>
+              <p className="text-accent text-[10px] font-bold tracking-[0.4em] uppercase mb-2">Protocol Access</p>
+              <h1 className="text-3xl font-bold font-heading mb-3 tracking-tighter">Security Check</h1>
+
               <p className="text-zinc-400 text-sm leading-relaxed">
                 Confirm your identity within the lecture hall proximity to sign the attendance ledger.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-10">
-              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 backdrop-blur-sm">
-                <Camera className="w-5 h-5 text-[#10b981] mb-2" />
-                <p className="text-xs font-bold text-white uppercase tracking-wider">Face ID</p>
-                <p className="text-[10px] text-zinc-500">Identity verification</p>
+              <div className="p-4 rounded-2xl bg-card border border-border backdrop-blur-sm">
+                <MapPin className="w-5 h-5 text-accent mb-2" />
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest">GPS Lock</p>
+                <p className="text-[10px] text-muted-foreground">Proximity match</p>
               </div>
-              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 backdrop-blur-sm">
-                <MapPin className="w-5 h-5 text-[#10b981] mb-2" />
-                <p className="text-xs font-bold text-white uppercase tracking-wider">GPS Lock</p>
-                <p className="text-[10px] text-zinc-500">Proximity match</p>
+              <div className="p-4 rounded-2xl bg-card border border-border backdrop-blur-sm">
+                <Camera className="w-5 h-5 text-accent mb-2" />
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest">Face ID</p>
+                <p className="text-[10px] text-muted-foreground">Identity verification</p>
               </div>
             </div>
 
             <Button
               onClick={startVerification}
-              className="w-full h-15 rounded-2xl bg-[#10b981] hover:bg-[#059669] text-black font-bold text-base shadow-[0_0_30px_rgba(16,185,129,0.2)] active:scale-95 transition-all"
+              className="w-full h-15 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-base shadow-[0_0_30px_rgba(var(--accent),0.2)] active:scale-95 transition-all"
             >
               Begin Verification
             </Button>
@@ -235,14 +250,14 @@ const AttendanceVerification = () => {
                 <motion.div 
                   animate={{ rotate: 360 }} 
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  className="absolute inset-0 rounded-full border-2 border-dashed border-[#10b981]/30"
+                  className="absolute inset-0 rounded-full border-2 border-dashed border-accent/30"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Scan className="w-8 h-8 text-[#10b981] animate-pulse" />
+                  <Scan className="w-8 h-8 text-accent animate-pulse" />
                 </div>
               </div>
               <h1 className="text-xl font-bold tracking-tight">Running Protocols</h1>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{session?.courses?.code}</p>
+              <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">{session?.courses?.code}</p>
             </div>
 
             {/* Checklist UI */}
@@ -254,37 +269,37 @@ const AttendanceVerification = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
                   className={`p-4 rounded-2xl border transition-all duration-300 ${
-                    item.status === "processing" ? "bg-[#10b981]/5 border-[#10b981]/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]" :
-                    item.status === "completed" ? "bg-zinc-900/40 border-[#10b981]/20" :
+                    item.status === "processing" ? "bg-accent/5 border-accent/30 shadow-[0_0_15px_rgba(var(--accent),0.1)]" :
+                    item.status === "completed" ? "bg-card border-accent/20" :
                     item.status === "failed" ? "bg-destructive/5 border-destructive/20" :
-                    "bg-zinc-900/10 border-zinc-800 opacity-50"
+                    "bg-card/30 border-border opacity-50"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
-                        item.status === "processing" ? "bg-[#10b981] text-black" :
-                        item.status === "completed" ? "bg-[#10b981]/10 text-[#10b981]" :
+                        item.status === "processing" ? "bg-accent text-accent-foreground" :
+                        item.status === "completed" ? "bg-accent/10 text-accent" :
                         item.status === "failed" ? "bg-destructive/10 text-destructive" :
-                        "bg-zinc-800 text-zinc-600"
+                        "bg-muted text-muted-foreground"
                       }`}>
                         {item.status === "processing" ? <Loader2 className="w-4 h-4 animate-spin" /> : 
                          item.status === "completed" ? <CheckCircle2 className="w-4 h-4" /> :
                          item.status === "failed" ? <XCircle className="w-4 h-4" /> :
                          <Lock className="w-4 h-4" />}
                       </div>
-                      <span className={`text-sm font-bold tracking-tight ${item.status === "failed" ? "text-destructive" : "text-white"}`}>
+                      <span className={`text-sm font-bold tracking-tight ${item.status === "failed" ? "text-destructive" : "text-foreground"}`}>
                         {item.label}
                       </span>
                     </div>
                     {item.status === "completed" && (
-                      <span className="text-[10px] text-zinc-500 font-mono">OK</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">OK</span>
                     )}
                   </div>
                   <p className={`text-[11px] ml-11 ${
-                    item.status === "processing" ? "text-[#10b981] font-medium animate-pulse" :
+                    item.status === "processing" ? "text-accent font-medium animate-pulse" :
                     item.status === "failed" ? "text-destructive/80" :
-                    "text-zinc-500"
+                    "text-muted-foreground"
                   }`}>
                     {item.message}
                   </p>
@@ -292,7 +307,7 @@ const AttendanceVerification = () => {
               ))}
             </div>
 
-            <p className="text-center text-[10px] text-zinc-600 font-mono mt-10 uppercase tracking-widest">
+            <p className="text-center text-[10px] text-muted-foreground font-mono mt-10 uppercase tracking-widest">
               Digital Secure Signature v2.0
             </p>
           </motion.div>
@@ -300,39 +315,39 @@ const AttendanceVerification = () => {
 
         {currentStep === "success" && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="pt-12 text-center">
-            <div className="w-24 h-24 rounded-full bg-[#10b981]/10 border border-[#10b981]/20 flex items-center justify-center mx-auto mb-8 relative">
-              <CheckCircle2 className="w-12 h-12 text-[#10b981]" />
+            <div className="w-24 h-24 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-8 relative">
+              <CheckCircle2 className="w-12 h-12 text-accent" />
               <motion.div 
                 animate={{ scale: [1, 1.5], opacity: [0.5, 0] }} 
                 transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute inset-0 bg-[#10b981] rounded-full" 
+                className="absolute inset-0 bg-accent rounded-full" 
               />
             </div>
             <h1 className="text-3xl font-bold font-heading mb-4">Verified!</h1>
-            <p className="text-zinc-400 text-sm mb-10 px-4">
-              Your attendance for <span className="text-white font-bold">{session?.courses?.code}</span> has been securely signed and submitted.
+            <p className="text-muted-foreground text-sm mb-10 px-4">
+              Your attendance for <span className="text-foreground font-bold">{session?.courses?.code}</span> has been securely signed and submitted.
             </p>
             
-            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 text-left mb-10">
-              <div className="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Digital Token</span>
-                <span className="text-xs font-mono text-zinc-300">#{sessionId?.slice(-8).toUpperCase()}</span>
+            <div className="bg-card border border-border rounded-3xl p-6 text-left mb-10">
+              <div className="flex justify-between items-center pb-4 border-b border-border mb-4">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Digital Token</span>
+                <span className="text-xs font-mono text-foreground/70">#{sessionId?.slice(-8).toUpperCase()}</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Student</span>
-                  <span className="text-white font-medium">{profile?.full_name}</span>
+                  <span className="text-muted-foreground">Student</span>
+                  <span className="text-foreground font-medium">{profile?.full_name}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Timestamp</span>
-                  <span className="text-white font-medium">{formatTime(new Date())}</span>
+                  <span className="text-muted-foreground">Timestamp</span>
+                  <span className="text-foreground font-medium">{formatTime(new Date())}</span>
                 </div>
               </div>
             </div>
 
             <Button
               onClick={() => navigate("/student")}
-              className="w-full h-15 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200 transition-all"
+              className="w-full h-15 rounded-2xl bg-foreground text-background font-bold hover:bg-foreground/90 transition-all shadow-xl"
             >
               Finish Protocol
             </Button>
@@ -345,7 +360,7 @@ const AttendanceVerification = () => {
               <XCircle className="w-10 h-10 text-destructive" />
             </div>
             <h1 className="text-2xl font-bold font-heading mb-3">Verification Failed</h1>
-            <p className="text-zinc-500 text-sm mb-12 px-6">
+            <p className="text-muted-foreground text-sm mb-12 px-6">
               Security requirements were not met. Please ensure you have GPS enabled and are within the lecture hall boundary.
             </p>
             
@@ -355,19 +370,31 @@ const AttendanceVerification = () => {
                   setChecklist(prev => prev.map(i => ({ ...i, status: "pending", message: "Awaiting retry..." })));
                   startVerification();
                 }}
-                className="w-full h-15 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200"
+                className="w-full h-15 rounded-2xl bg-foreground text-background font-bold hover:bg-foreground/90"
               >
                 Retry Protocol
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => navigate("/student")}
-                className="w-full h-12 rounded-xl text-zinc-500 hover:text-white transition-colors"
+                className="w-full h-12 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
               >
                 Cancel & Exit
               </Button>
             </div>
           </motion.div>
+        )}
+
+        {/* Liveness Scanner Overlay */}
+        {showScanner && (
+          <LivenessScanner 
+            onVerify={handleLivenessComplete} 
+            onCancel={() => {
+              setShowScanner(false);
+              setCurrentStep("failed");
+              toast.error("Security scan cancelled.");
+            }} 
+          />
         )}
       </div>
     </div>
