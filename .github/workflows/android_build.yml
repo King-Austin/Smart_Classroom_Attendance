@@ -26,6 +26,7 @@ jobs:
       - name: Build Web App
         run: npm run build
 
+      # Java version 17 setup for Android Build compatibility
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
@@ -34,6 +35,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Add Android Platform
+        run: npx cap add android
 
       - name: Capacitor Sync
         run: npx cap sync android
