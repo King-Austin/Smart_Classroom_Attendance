@@ -8,11 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const FACULTIES = ["Engineering"];
-const DEPARTMENTS: Record<string, string[]> = {
-  Engineering: ["Electronic and Computer Engineering"],
-};
+import { FACULTIES, DEPARTMENTS, DEFAULT_FACULTY, DEFAULT_DEPARTMENT } from "@/constants";
 
 const LecturerRegister = () => {
   const navigate = useNavigate();
@@ -22,8 +18,8 @@ const LecturerRegister = () => {
     staffId: "",
     email: "",
     password: "",
-    faculty: "Engineering",
-    department: "Electronic and Computer Engineering",
+    faculty: DEFAULT_FACULTY,
+    department: DEFAULT_DEPARTMENT,
   });
 
   const updateForm = (key: string, value: string) => {
@@ -80,8 +76,8 @@ const LecturerRegister = () => {
         animate={{ opacity: 1, y: 0 }}
         className="px-6 pb-8 max-w-sm mx-auto"
       >
-        <h1 className="text-2xl font-bold font-heading mb-1">Lecturer Registration</h1>
-        <p className="text-muted-foreground text-sm mb-6">Set up your lecturer account</p>
+        <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Lecturer Registration</h1>
+        <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Set up your lecturer account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

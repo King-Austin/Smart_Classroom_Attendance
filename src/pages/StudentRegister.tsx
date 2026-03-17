@@ -11,13 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
-
-const FACULTIES = ["Engineering"];
-const DEPARTMENTS: Record<string, string[]> = {
-  Engineering: ["Electronic and Computer Engineering"],
-};
-const LEVELS = ["100", "200", "300", "400", "500"];
-const SEMESTERS = ["1st Semester", "2nd Semester"];
+import { Course } from "@/types";
+import { FACULTIES, DEPARTMENTS, LEVELS, SEMESTERS, DEFAULT_FACULTY, DEFAULT_DEPARTMENT } from "@/constants";
 
 const StudentRegister = () => {
   const navigate = useNavigate();
@@ -30,13 +25,13 @@ const StudentRegister = () => {
     password: "",
     level: "",
     semester: "",
-    faculty: "Engineering",
-    department: "Electronic and Computer Engineering",
+    faculty: DEFAULT_FACULTY,
+    department: DEFAULT_DEPARTMENT,
     parentPhone: "",
     deviceBinding: false,
   });
   const [faceImages, setFaceImages] = useState<string[]>([]);
-  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
 
   const updateForm = (key: string, value: string | boolean) => {
@@ -153,7 +148,7 @@ const StudentRegister = () => {
           device_binding: form.deviceBinding,
           device_info: form.deviceBinding ? navigator.userAgent : null,
           face_enrolled: true,
-          face_embeddings: { paths: uploadedPaths }, // Storing paths temporarily until extraction service runs
+          face_embeddings: { paths: uploadedPaths },
         });
 
         if (profileError) throw profileError;
@@ -186,7 +181,7 @@ const StudentRegister = () => {
         <button onClick={() => (step > 1 ? setStep(step - 1) : navigate("/"))} className="flex items-center gap-1 text-muted-foreground text-sm">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <span className="text-xs text-muted-foreground font-medium">Step {step} of 4</span>
+        <span className="text-xs text-muted-foreground font-medium text-foreground/70">Step {step} of 4</span>
       </div>
 
       {/* Progress bar */}
@@ -208,8 +203,8 @@ const StudentRegister = () => {
       >
         {step === 1 && (
           <>
-            <h1 className="text-2xl font-bold font-heading mb-1">Personal Info</h1>
-            <p className="text-muted-foreground text-sm mb-6">Let's get you registered</p>
+            <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Personal Info</h1>
+            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Let's get you registered</p>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Full Name</Label>
@@ -240,8 +235,8 @@ const StudentRegister = () => {
 
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-bold font-heading mb-1">Academic Info</h1>
-            <p className="text-muted-foreground text-sm mb-6">Your university details</p>
+            <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Academic Info</h1>
+            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Your university details</p>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Faculty</Label>
@@ -285,7 +280,7 @@ const StudentRegister = () => {
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-card shadow-sm border border-border">
                 <div>
-                  <p className="text-sm font-medium">Device Binding</p>
+                  <p className="text-sm font-medium text-foreground">Device Binding</p>
                   <p className="text-xs text-muted-foreground">Link this device to your account</p>
                 </div>
                 <Switch checked={form.deviceBinding} onCheckedChange={(v) => updateForm("deviceBinding", v)} />
@@ -299,8 +294,8 @@ const StudentRegister = () => {
 
         {step === 3 && (
           <>
-            <h1 className="text-2xl font-bold font-heading mb-1">Course Selection</h1>
-            <p className="text-muted-foreground text-sm mb-6">Select the courses you are offering this semester</p>
+            <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Course Selection</h1>
+            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Select the courses you are offering this semester</p>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
               {availableCourses.length === 0 ? (
                 <div className="text-center py-10">
@@ -322,7 +317,7 @@ const StudentRegister = () => {
                       <div>
                         <p className="font-bold text-foreground">{course.code}</p>
                         <p className="text-sm text-foreground/80 line-clamp-1">{course.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">{course.category} · {course.credit_units || course.creditUnit || 0} Units</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">{course.semester}</p>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         selectedCourses.includes(course.id) ? "bg-accent border-accent" : "border-muted-foreground/30"
@@ -346,8 +341,8 @@ const StudentRegister = () => {
 
         {step === 4 && (
           <>
-            <h1 className="text-2xl font-bold font-heading mb-1">Face Enrollment</h1>
-            <p className="text-muted-foreground text-sm mb-6">Capture 3–5 face images for verification</p>
+            <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Face Enrollment</h1>
+            <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Capture 3–5 face images for verification</p>
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 {[...Array(5)].map((_, i) => (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Wifi, MapPin, Camera, Rocket } from "lucide-react";
@@ -11,18 +11,13 @@ import { toast } from "sonner";
 import { Geolocation } from "@capacitor/geolocation";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
-
-const COURSES = [
-  "CSC 301 - Data Structures",
-  "CSC 305 - Operating Systems",
-  "CSC 311 - Algorithms",
-];
+import { Course } from "@/types";
+import { LEVELS, SEMESTERS, DEFAULT_DEPARTMENT, SESSION_STATUS } from "@/constants";
 
 const CreateSession = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   
   const [form, setForm] = useState({
     level: "",
@@ -47,7 +42,7 @@ const CreateSession = () => {
         .select("*")
         .eq("level", form.level)
         .eq("semester", form.semester)
-        .eq("department", "Electronic and Computer Engineering");
+        .eq("department", DEFAULT_DEPARTMENT);
       
       if (data) setCourses(data);
       setLoading(false);
@@ -64,7 +59,7 @@ const CreateSession = () => {
     setLoading(true);
     
     try {
-      const user = (await supabase.auth.getUser()).data.user;
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       // 1. Capture Location
@@ -94,7 +89,7 @@ const CreateSession = () => {
         lecturer_lat: lat,
         lecturer_lng: lng,
         geo_radius_meters: 50,
-        status: "active"
+        status: SESSION_STATUS.ACTIVE
       }).select().single();
 
       if (error) throw error;
@@ -124,8 +119,8 @@ const CreateSession = () => {
         animate={{ opacity: 1, y: 0 }}
         className="px-6 pb-8 max-w-sm mx-auto"
       >
-        <h1 className="text-2xl font-bold font-heading mb-1">Create Session</h1>
-        <p className="text-muted-foreground text-sm mb-6">Set up a new attendance session</p>
+        <h1 className="text-2xl font-bold font-heading mb-1 text-foreground">Create Session</h1>
+        <p className="text-muted-foreground text-sm mb-6 text-foreground/70">Set up a new attendance session</p>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -134,7 +129,7 @@ const CreateSession = () => {
               <Select value={form.level} onValueChange={(v) => updateForm("level", v)}>
                 <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Level" /></SelectTrigger>
                 <SelectContent>
-                  {["100", "200", "300", "400", "500"].map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  {LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -143,8 +138,7 @@ const CreateSession = () => {
               <Select value={form.semester} onValueChange={(v) => updateForm("semester", v)}>
                 <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Sem" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1st Semester">1st Semester</SelectItem>
-                  <SelectItem value="2nd Semester">2nd Semester</SelectItem>
+                  {SEMESTERS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

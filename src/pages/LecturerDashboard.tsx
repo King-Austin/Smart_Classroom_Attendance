@@ -1,102 +1,32 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Plus, Eye, UserPlus, Bell, LogOut, BookOpen, BarChart3, User,
-  Clock, Users, ChevronRight
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { formatSessionDate } from "@/lib/date";
+import { useProfile } from "@/hooks/useProfile";
+import { useLecturerData } from "@/hooks/useLecturerData";
 import { calculatePercentage } from "@/lib/utils";
+import { formatSessionDate } from "@/lib/date";
 
 const LecturerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    courseCount: 0,
-    avgRate: 0,
-  });
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Fetch Profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      setProfile(profileData);
-
-      // 2. Fetch Sessions and calculate present/total
-      // We'll join with courses and fetch record counts
-      const { data: sessionsData } = await supabase
-        .from("attendance_sessions")
-        .select(`
-          *,
-          courses(name, code),
-          attendance_records(id, status)
-        `)
-        .eq("lecturer_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (sessionsData) {
-        // For each session, we need the total enrolled students to calculate attendance rate
-        const sessionsWithStats = await Promise.all(sessionsData.map(async (s: any) => {
-          const { count: totalEnrolled } = await supabase
-            .from("enrollments")
-            .select("*", { count: 'exact', head: true })
-            .eq("course_id", s.course_id);
-          
-          const present = s.attendance_records?.filter((r: any) => r.status === 'verified').length || 0;
-          return {
-            ...s,
-            present,
-            total: totalEnrolled || 0,
-            date: formatSessionDate(s.created_at)
-          };
-        }));
-        setSessions(sessionsWithStats);
-
-        // 3. Calculate Global Stats
-        const uniqueCourseIds = new Set(sessionsData.map(s => s.course_id));
-        
-        // Total students assigned (distinct students across all courses taught by lecturer)
-        const { data: assignments } = await supabase
-          .from("enrollments")
-          .select("student_id")
-          .in("course_id", Array.from(uniqueCourseIds));
-        const totalStudents = new Set(assignments?.map(a => a.student_id)).size;
-
-        const totalPresent = sessionsWithStats.reduce((acc, s) => acc + s.present, 0);
-        const totalPossible = sessionsWithStats.reduce((acc, s) => acc + s.total, 0);
-        const avgRate = calculatePercentage(totalPresent, totalPossible);
-
-        setStats({
-          totalStudents,
-          courseCount: uniqueCourseIds.size,
-          avgRate
-        });
-      }
-      setLoading(false);
-    };
-
-    fetchDashboardData();
-  }, []);
+  const { profile, loading: profileLoading } = useProfile();
+  const { sessions, stats, loading: dataLoading } = useLecturerData(profile?.id);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
   };
+
+  if ((profileLoading || dataLoading) && !profile) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -139,7 +69,7 @@ const LecturerDashboard = () => {
             ))}
           </div>
 
-          {/* Stats */}
+          {/* Stats Summary */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-xl bg-card border border-border text-center">
               <p className="text-lg font-bold">{stats.totalStudents}</p>
@@ -157,7 +87,7 @@ const LecturerDashboard = () => {
 
           {/* Recent Sessions */}
           <div>
-            <h2 className="text-sm font-semibold text-foreground mb-3">Recent Sessions</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-3 font-heading">Recent Sessions</h2>
             <div className="space-y-3">
               {sessions.length === 0 ? (
                 <div className="p-10 text-center bg-card rounded-xl border border-border">
@@ -173,10 +103,10 @@ const LecturerDashboard = () => {
                     className="p-4 rounded-xl bg-card border border-border shadow-sm cursor-pointer"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-semibold">{(session.courses as any)?.code || 'Course'}</p>
-                      <span className="text-xs text-muted-foreground">{session.date}</span>
+                      <p className="text-sm font-semibold">{session.courses?.code || 'Course'}</p>
+                      <span className="text-xs text-muted-foreground">{formatSessionDate(session.created_at)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">{session.topic || 'No topic'}</p>
+                    <p className="text-xs text-muted-foreground mb-2 truncate">{session.topic || 'No topic'}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" /> {session.present}/{session.total} present
@@ -202,18 +132,8 @@ const LecturerDashboard = () => {
               <p className="text-xs text-muted-foreground">Avg. Attendance</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold">{sessions.length}</p>
+              <p className="text-2xl font-bold text-foreground">{sessions.length}</p>
               <p className="text-xs text-muted-foreground">Sessions Created</p>
-            </div>
-            <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold text-destructive">
-                {sessions.reduce((acc, s) => acc + (s.total - s.present), 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Absences</p>
-            </div>
-            <div className="p-4 rounded-xl bg-card border border-border text-center">
-              <p className="text-2xl font-bold">{stats.courseCount}</p>
-              <p className="text-xs text-muted-foreground">Courses Managed</p>
             </div>
           </div>
         </motion.div>
@@ -233,9 +153,9 @@ const LecturerDashboard = () => {
               ["Department", profile?.department],
               ["Managed Courses", stats.courseCount.toString()],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-medium">{value}</span>
+              <div key={label as string} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{label as string}</span>
+                <span className="font-medium">{value as string}</span>
               </div>
             ))}
           </div>
