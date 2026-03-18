@@ -23,6 +23,21 @@
 
 ---
 
+## 🧬 Biometric Server (InsightFace Node)
+
+The application uses an external stateless FastAPI server for face vectorization and verification.
+
+### Cloud Deployment (Railway / Koyeb)
+1. **Memory Requirement:** Min **1GB RAM** (Recommend 2GB). InsightFace is heavy on memory.
+2. **First Run:** The Docker image is "baked" with the model weights (~200MB) to ensure instant startup without timeouts.
+3. **Internal Connection:** Use the internal network URL if both the app and server are on the same cloud provider.
+
+### API Endpoints
+- `POST /enroll`: Returns 512-dim face embedding from an image.
+- `POST /verify`: Compares live image against stored vector.
+
+---
+
 ## 🛠️ Technology Stack
 
 *   **Frontend**: React (Vite) + TypeScript

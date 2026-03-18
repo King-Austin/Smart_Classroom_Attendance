@@ -14,11 +14,13 @@ import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { Course } from "@/types";
 import { FACULTIES, DEPARTMENTS, LEVELS, SEMESTERS, DEFAULT_FACULTY, DEFAULT_DEPARTMENT } from "@/constants";
 import LivenessScanner from "@/components/verification/LivenessScanner";
+import { useBiometrics } from "@/hooks/useBiometrics";
 
 const StudentRegister = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const { enroll, loading: biometricLoading } = useBiometrics();
   const [isVectorizing, setIsVectorizing] = useState(false);
   const [isLivenessOpen, setIsLivenessOpen] = useState(false);
   const [form, setForm] = useState({
@@ -121,9 +123,10 @@ const StudentRegister = () => {
       if (!authData.user) throw new Error("Security handshake failed. Please try again.");
       createdUserId = authData.user.id;
 
-      // 3. Biometric Vectorization (ImageSight Simulation)
+      // 3. Biometric Vectorization (Refined Protocol)
       setIsVectorizing(true);
-      await new Promise(resolve => setTimeout(resolve, 3500));
+      const faceVector = await enroll(faceImages[0]); // Send primary frame to FastAPI
+      if (!faceVector) throw new Error("Biometric server could not synchronize. Please retry.");
 
       // 4. Secure Storage Upload (Failsafe with cleanup tracking)
       const uploadPromises = faceImages.map(async (base64, index) => {
@@ -148,8 +151,13 @@ const StudentRegister = () => {
       });
 
       const finalPaths = await Promise.all(uploadPromises);
+      
+      // Get the first image as the avatar URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("face-enrollments")
+        .getPublicUrl(finalPaths[0]);
 
-      // 5. Atomic Profile Creation
+      // 5. Atomic Profile Creation & Vector Storage
       const { error: profileError } = await supabase.from("profiles").insert({
         id: createdUserId,
         full_name: form.fullName,
@@ -163,14 +171,23 @@ const StudentRegister = () => {
         device_binding: form.deviceBinding,
         device_info: form.deviceBinding ? navigator.userAgent : null,
         face_enrolled: true,
+        avatar_url: publicUrl,
         face_embeddings: { 
           paths: finalPaths, 
-          version: "imagesight-v2-fs",
+          version: "insightface-v2-stateless",
           vectorized_at: new Date().toISOString()
         },
       });
 
       if (profileError) throw profileError;
+
+      // 5b. Save the pure vector in the specialized table for pgvector matching
+      const { error: vectorError } = await supabase.from("face_embeddings").insert({
+        user_id: createdUserId,
+        embedding: faceVector
+      });
+
+      if (vectorError) throw vectorError;
 
       // 6. Course Enrollment
       if (selectedCourses.length > 0) {

@@ -130,6 +130,8 @@ That’s already stronger than most university systems.
 
 ✅ **COMPLETED CORE PROTOCOL**
 - [x] Layer 1: GPS 150m Soft-Gate (with accuracy recalibration)
+- [x] Layer 2: BLE Proximity (optional fallback)
+- [x] Layer 3: Face Identity Protocol (Stateless FastAPI + PGVector)
 - [x] Vercel Analytics Integration
 
 🎨 **DESIGN SYSTEM**

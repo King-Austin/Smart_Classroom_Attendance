@@ -188,6 +188,38 @@ export type Database = {
         }
         Relationships: []
       }
+      face_embeddings: {
+        Row: {
+          id: string
+          user_id: string
+          embedding: string // pgvector is often represented as a string or number[] in JSON depending on driver
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          embedding: string | number[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          embedding?: string | number[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "face_embeddings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           course_id: string
@@ -282,7 +314,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verify_student_biometrics: {
+        Args: {
+          p_student_id: string
+          p_incoming_vector: string | number[]
+          p_liveness_score: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

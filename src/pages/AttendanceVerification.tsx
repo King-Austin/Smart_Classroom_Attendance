@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateDistance } from "@/lib/geo";
 import { formatTime } from "@/lib/date";
 import LivenessScanner from "@/components/verification/LivenessScanner";
+import { useBiometrics } from "@/hooks/useBiometrics";
 
 type VerificationStepId = "init" | "face" | "gps" | "ble" | "upload" | "final";
 
@@ -34,6 +35,7 @@ const AttendanceVerification = () => {
   const [profile, setProfile] = useState<any>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const { verify, loading: biometricLoading } = useBiometrics();
 
   // We need a ref to handle the promise for the scanner
   const livenessResolver = useRef<((value: string[]) => void) | null>(null);
@@ -163,12 +165,38 @@ const AttendanceVerification = () => {
       }
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 3. Face Identity
+      // 3. Face Identity (Refined Protocol)
       updateChecklist("face", "processing", "Awaiting biometric signature...");
+      
+      // 3a. Fetch stored vector for comparison
+      const { data: vectorData, error: vectorError } = await supabase
+        .from("face_embeddings")
+        .select("embedding")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (vectorError || !vectorData) {
+        updateChecklist("face", "failed", "No biometric signature found. Please enroll first.");
+        throw new Error("No enrollment data found.");
+      }
+
+      const storedVector = (vectorData.embedding as unknown) as number[];
+
+      // 3b. Capture live pulse
       const images = await requestLiveness();
-      const photoBase64 = images[0]; // Take primary center-face for ledger
+      const photoBase64 = images[0];
       setCapturedPhoto(photoBase64);
-      updateChecklist("face", "completed", "Identity verified successfully");
+
+      // 3c. FastAPI Sync
+      updateChecklist("face", "processing", "Synchronizing with Biometric Node...");
+      const result = await verify(photoBase64, storedVector);
+
+      if (!result.success) {
+        updateChecklist("face", "failed", `Identity Mismatch (Score: ${Math.round(result.score * 100)}%)`);
+        throw new Error("Identity verification failed. Similarity threshold not met.");
+      }
+
+      updateChecklist("face", "completed", `Identity Verified (Match: ${Math.round(result.score * 100)}%)`);
       await Haptics.impact({ style: ImpactStyle.Light });
 
       // 4. Final Submission
