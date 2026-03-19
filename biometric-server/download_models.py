@@ -1,12 +1,12 @@
 from insightface.app import FaceAnalysis
 import os
 
-# Create directory if it doesn't exist
-model_dir = os.path.expanduser('~/.insightface/models')
-os.makedirs(model_dir, exist_ok=True)
+# Define local root for Docker baking
+LOCAL_ROOT = './'
+MODEL_NAME = 'buffalo_l'
 
-# Initialize and prepare to trigger download
-print("Pre-downloading InsightFace models (buffalo_l)...")
-app = FaceAnalysis(name='buffalo_l', root='.', providers=['CPUExecutionProvider'])
+# Initialize and prepare to trigger download into LOCAL_ROOT/models/
+print(f"Pre-downloading InsightFace models ({MODEL_NAME}) into {LOCAL_ROOT}/models/...")
+app = FaceAnalysis(name=MODEL_NAME, root=LOCAL_ROOT, providers=['CPUExecutionProvider'])
 app.prepare(ctx_id=0, det_size=(640, 640))
-print("Download complete.")
+print("Download complete and verified.")
