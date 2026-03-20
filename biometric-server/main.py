@@ -81,14 +81,15 @@ async def verify(request: VerifyRequest):
     stored_vector = np.array(request.stored_vector)
     similarity = float(get_cosine_similarity(current_vector, stored_vector))
     
-    # Simple threshold and mock liveness for protocol success
-    # In a real production environment, you would use a Silent Liveness model here.
-    MATCH_THRESHOLD = 0.65 # InsightFace cosine threshold is usually lower (0.5-0.7)
+    # Balanced threshold for general reliability (0.65)
+    MATCH_THRESHOLD = 0.65 
+    
+    is_match = similarity > MATCH_THRESHOLD
     
     return {
-        "match": similarity > MATCH_THRESHOLD,
+        "match": is_match,
         "similarity": similarity,
-        "liveness": 0.95 # Mocking liveness success for this prototype
+        "liveness": 0.95 if is_match else 0.05 # Reduced mock liveness if match fails
     }
 
 if __name__ == "__main__":

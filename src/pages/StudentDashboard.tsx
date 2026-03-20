@@ -25,6 +25,9 @@ import { toast } from "sonner";
 import { PresenceLoader } from "@/components/PresenceLoader";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutConfirmDialog } from "@/components/LogoutConfirmDialog";
+import { useBiometrics } from "@/hooks/useBiometrics";
+
+const DEBUG_MODE = true; // Set to false to hide debug tools
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -40,6 +43,9 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showDeviceVerification, setShowDeviceVerification] = useState(false);
   const [isVerifyingDevice, setIsVerifyingDevice] = useState(false);
+  const [debugFlow, setDebugFlow] = useState<"enroll" | "verify" | null>(null);
+  
+  const { enroll, verify, loading: biometricLoading } = useBiometrics();
 
   useEffect(() => {
     const fetchHistoryAndCourses = async () => {
@@ -123,6 +129,91 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleDebugBiometrics = async (images: string[]) => {
+    if (!profile) return;
+    
+    try {
+      if (debugFlow === "enroll") {
+        console.log("DEBUG: Starting Re-enrollment Flow...");
+        toast.info("Vectorizing Face...", { description: "Communicating with ImageSight Node" });
+        
+        const vector = await enroll(images[0]); // Using center face
+        if (!vector) throw new Error("Biometric Vectorization failed");
+        
+        console.log("DEBUG: Enrollment Success. Vector length:", vector.length);
+        
+        // 1. Clear existing biometrics for this user (Delete-before-Insert)
+        const { error: deleteError } = await supabase
+          .from("face_embeddings")
+          .delete()
+          .eq("user_id", profile.id);
+
+        if (deleteError) {
+          console.error("Delete Error:", deleteError);
+          throw new Error(`DB Delete Fail: ${deleteError.message}`);
+        }
+
+        // 2. Insert new biometrics
+        const { error: insertError } = await supabase
+          .from("face_embeddings")
+          .insert({ 
+            user_id: profile.id, 
+            embedding: vector 
+          });
+
+        if (insertError) {
+          console.error("Insert Error:", insertError);
+          throw new Error(`DB Insert Fail: ${insertError.message}`);
+        }
+
+        // 3. Mark profile as enrolled
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ face_enrolled: true } as any)
+          .eq("id", profile.id);
+
+        if (profileError) throw new Error(`Profile Update Fail: ${profileError.message}`);
+        
+        toast.success("Profile Re-enrolled", { description: "Your biometric signature is now in the vault." });
+      } 
+      else if (debugFlow === "verify") {
+        console.log("DEBUG: Starting Verification Test...");
+        
+        // Fetch stored vector
+        const { data: vectorData } = await supabase
+          .from("face_embeddings")
+          .select("embedding")
+          .eq("user_id", profile.id)
+          .single();
+
+        if (!vectorData?.embedding) {
+          toast.error("No Enrollment Found", { description: "Please enroll your face first." });
+          return;
+        }
+
+        const storedVector = (vectorData.embedding as unknown) as number[];
+        const result = await verify(images[0], storedVector);
+        
+        console.log(`DEBUG: Verification Result - Match: ${result.success}, Score: ${result.score}, Liveness: ${result.liveness}`);
+        
+        if (result.success) {
+          toast.success("Match Confirmed", { 
+            description: `Identity verified with ${Math.round(result.score * 100)}% similarity.` 
+          });
+        } else {
+          toast.error("Identity Mismatch", { 
+            description: `Verification failed. Similarity: ${Math.round(result.score * 100)}% (Requires 65%)` 
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error("DEBUG ERROR:", err);
+      toast.error("Debug Flow Failed", { description: err.message });
+    } finally {
+      setDebugFlow(null);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -166,6 +257,13 @@ const StudentDashboard = () => {
         <LivenessScanner 
           onVerify={handleDeviceVerified}
           onCancel={() => setShowDeviceVerification(false)}
+        />
+      )}
+
+      {debugFlow && (
+        <LivenessScanner 
+          onVerify={handleDebugBiometrics}
+          onCancel={() => setDebugFlow(null)}
         />
       )}
 
@@ -325,6 +423,42 @@ const StudentDashboard = () => {
                 End Session
               </Button>
             </div>
+
+            {/* Debug Biometric Terminal */}
+            {DEBUG_MODE && (
+              <div className="p-8 rounded-[2.5rem] bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-6">
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Debug Protocol Terminal</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      console.log("DEBUG: Triggering Manual Re-enrollment...");
+                      setDebugFlow("enroll");
+                    }}
+                    className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
+                  >
+                    Re-enroll Face
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      console.log("DEBUG: Triggering Manual Verification Test...");
+                      setDebugFlow("verify");
+                    }}
+                    className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
+                  >
+                    Verify Face
+                  </Button>
+                </div>
+                <p className="mt-4 text-[9px] text-amber-500/70 font-medium leading-relaxed italic">
+                  * Use these buttons to test ImageSight reliability across different lighting or faces. All results are logged in the browser console.
+                </p>
+              </div>
+            )}
 
             {/* Courses Section (Moved from Home) */}
             <div className="bg-card/40 backdrop-blur-md rounded-[2.5rem] p-8 border border-border relative overflow-hidden">

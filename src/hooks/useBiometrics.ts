@@ -37,20 +37,33 @@ export const useBiometrics = () => {
   /**
    * Verify a face against a stored vector.
    * @param currentImage The live face capture
-   * @param storedVector The vector saved during enrollment
+   * @param storedVector The vector saved during enrollment (array or pgvector string)
    */
   const verify = async (
     currentImage: string,
-    storedVector: number[]
+    storedVector: number[] | string
   ): Promise<{ success: boolean; score: number; liveness: number }> => {
     setLoading(true);
     try {
+      // Ensure storedVector is an array (Supabase/pgvector often returns a string like "[1,2,3]")
+      let finalVector = storedVector;
+      if (typeof storedVector === 'string') {
+        try { 
+          // Remove brackets and split if it's a pgvector string, or use JSON.parse
+          const cleanString = (storedVector as string).replace('[', '').replace(']', '');
+          finalVector = cleanString.split(',').map(Number);
+          console.log("Biometrics: Parsed string vector into array of length", finalVector.length);
+        } catch (e) {
+          console.error("Biometrics: Failed to parse vector string", e);
+        }
+      }
+
       const response = await fetch(`${SERVER_URL}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           image: currentImage,
-          stored_vector: storedVector,
+          stored_vector: finalVector,
         }),
       });
 

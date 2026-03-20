@@ -199,8 +199,12 @@ const AttendanceVerification = () => {
       const result = await verify(photoBase64, storedVector);
 
       if (!result.success) {
+        console.warn(`[PROTOCOL BREACH] Biometric Mismatch: Similarity at ${Math.round(result.score * 100)}% (Threshold: 65%)`);
         updateChecklist("face", "failed", `Identity Mismatch (Score: ${Math.round(result.score * 100)}%)`);
-        throw new Error("Identity verification failed. Similarity threshold not met.");
+        toast.error("Identity Mismatch", {
+          description: "Biometric signature does not match the enrolled profile. Try checking your lighting."
+        });
+        throw new Error("Identity verification failed.");
       }
 
       setTelemetry(prev => ({ ...prev, score: result.score }));
