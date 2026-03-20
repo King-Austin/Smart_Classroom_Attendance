@@ -62,6 +62,12 @@ const AttendanceVerification = () => {
     { id: "upload", label: "Digital Signature", status: "pending", message: "Uploading encrypted data" },
   ]);
 
+  const [telemetry, setTelemetry] = useState({
+    lat: 0,
+    lng: 0,
+    score: 0
+  });
+
   const updateChecklist = (id: VerificationStepId, status: ChecklistItem["status"], message: string) => {
     setChecklist(prev => prev.map(item => item.id === id ? { ...item, status, message } : item));
   };
@@ -132,6 +138,7 @@ const AttendanceVerification = () => {
           throw new Error(`Out of range. You are ${Math.round(distance)}m from the hall (Limit: 150m).`);
         }
         
+        setTelemetry(prev => ({ ...prev, lat: position.coords.latitude, lng: position.coords.longitude }));
         updateChecklist("gps", "completed", `GPS Verified: ~${Math.round(effectiveDistance)}m deviation`);
       } catch (gpsError: any) {
         updateChecklist("gps", "failed", gpsError.message || "GPS Timeout");
@@ -196,6 +203,7 @@ const AttendanceVerification = () => {
         throw new Error("Identity verification failed. Similarity threshold not met.");
       }
 
+      setTelemetry(prev => ({ ...prev, score: result.score }));
       updateChecklist("face", "completed", `Identity Verified (Match: ${Math.round(result.score * 100)}%)`);
       await Haptics.impact({ style: ImpactStyle.Light });
 
@@ -210,9 +218,9 @@ const AttendanceVerification = () => {
       const { error: recordError } = await supabase.from("attendance_records").insert({
         student_id: user.id,
         session_id: sessionId,
-        gps_lat: 0, 
-        gps_lng: 0,
-        face_score: 1.0,
+        gps_lat: telemetry.lat, 
+        gps_lng: telemetry.lng,
+        face_score: telemetry.score || 1.0,
         status: "verified"
       });
 
