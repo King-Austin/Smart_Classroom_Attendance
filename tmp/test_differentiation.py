@@ -27,7 +27,7 @@ def test_differentiation():
 
     # 2. Verify Person 1 against Person 1 (Self-match test)
     print(f"\n--- Verifying Person 1 against Self (Expect Match) ---")
-    verify_self = requests.post(f"{SERVER_URL}/verify", json={
+    verify_self = requests.post(f"{SERVER_URL}/verify", json={ 
         "image": img1_b64,
         "stored_vector": person1_vector
     })
