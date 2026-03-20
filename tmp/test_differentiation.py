@@ -10,7 +10,7 @@ IMAGE2_PATH = r"C:\Users\kingaustin\.gemini\antigravity\brain\2da773b0-c6fe-4fdc
 def get_base64_from_file(path):
     with open(path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
-
+  
 def test_differentiation():
     print(f"🚀 Testing Biometric Server Differentiation...")
     
