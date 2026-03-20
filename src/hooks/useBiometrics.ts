@@ -44,7 +44,7 @@ export const useBiometrics = () => {
     storedVector: number[] | string
   ): Promise<{ success: boolean; score: number; liveness: number }> => {
     setLoading(true);
-    try {
+    try { 
       // Ensure storedVector is an array (Supabase/pgvector often returns a string like "[1,2,3]")
       let finalVector = storedVector;
       if (typeof storedVector === 'string') {
