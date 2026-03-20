@@ -11,7 +11,7 @@ app = FastAPI(title="Smart Attendance Biometric Node")
 # Initialize InsightFace
 # buffalo_l is the large model, buffalo_s is the small one.
 # We use providers=['CPUExecutionProvider'] for maximum compatibility.
-face_app = FaceAnalysis(name='buffalo_l', root='.', providers=['CPUExecutionProvider'])
+face_app = FaceAnalysis(name='buffalo_s', root='.', providers=['CPUExecutionProvider'])
 face_app.prepare(ctx_id=0, det_size=(640, 640))
 
 class ImageRequest(BaseModel):

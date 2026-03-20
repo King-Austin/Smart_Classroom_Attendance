@@ -3,7 +3,7 @@ import os
 
 # Define local root for Docker baking
 LOCAL_ROOT = './'
-MODEL_NAME = 'buffalo_l'
+MODEL_NAME = 'buffalo_s'
 
 # Initialize and prepare to trigger download into LOCAL_ROOT/models/
 print(f"Pre-downloading InsightFace models ({MODEL_NAME}) into {LOCAL_ROOT}/models/...")
