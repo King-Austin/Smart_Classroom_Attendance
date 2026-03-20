@@ -169,7 +169,7 @@ const StudentRegister = () => {
         department: form.department,
         parent_phone: form.parentPhone,
         device_binding: form.deviceBinding,
-        device_info: form.deviceBinding ? navigator.userAgent : null,
+        device_info: form.deviceBinding ? await import("@/lib/device").then(m => m.getUniqueDeviceId()) : null,
         face_enrolled: true,
         avatar_url: publicUrl,
         face_embeddings: { 
@@ -402,11 +402,17 @@ const StudentRegister = () => {
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-foreground">
-                    {faceImages.length > 0 ? "3 Images Captured" : "Liveness Protocol"}
+                    {faceImages.length === 0 ? "Liveness Protocol" : 
+                     faceImages.length === 3 ? "Biometric Data Ready" : 
+                     `Captured ${faceImages.length}/3 Angles`}
                   </p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                    {faceImages.length > 0 ? "Biometric Data Ready" : "Face-Center-Right-Left"}
-                  </p>
+                  <div className="flex flex-col gap-1 mt-2">
+                    <div className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest font-bold">
+                       <span className={faceImages.length >= 1 ? "text-accent" : "text-muted-foreground"}>● Center</span>
+                       <span className={faceImages.length >= 2 ? "text-accent" : "text-muted-foreground"}>● Right</span>
+                       <span className={faceImages.length >= 3 ? "text-accent" : "text-muted-foreground"}>● Left</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

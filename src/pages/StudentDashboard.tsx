@@ -77,7 +77,7 @@ const StudentDashboard = () => {
       const currentDeviceId = await getUniqueDeviceId();
       
       // If profile has a bound device and it doesn't match current
-      if (profile.bound_device_id && profile.bound_device_id !== currentDeviceId) {
+      if (profile.device_info && profile.device_info !== currentDeviceId) {
         setIsVerifyingDevice(true);
         setShowDeviceVerification(true);
         toast.warning("New Device Detected", {
@@ -85,10 +85,10 @@ const StudentDashboard = () => {
         });
       } 
       // Auto-bind if not set yet
-      else if (!profile.bound_device_id) {
+      else if (!profile.device_info) {
         await supabase
           .from("profiles")
-          .update({ bound_device_id: currentDeviceId } as any)
+          .update({ device_info: currentDeviceId } as any)
           .eq("id", profile.id);
       }
     };
@@ -106,8 +106,8 @@ const StudentDashboard = () => {
       const { error } = await supabase
         .from("profiles")
         .update({ 
-          bound_device_id: currentDeviceId,
-          device_info: "Verified via multi-angle liveness"
+          device_info: currentDeviceId,
+          device_binding: true
         } as any)
         .eq("id", profile?.id);
 
@@ -308,7 +308,7 @@ const StudentDashboard = () => {
                    ["Level", profile?.level],
                    ["Faculty", profile?.faculty],
                    ["Biometrics", profile?.face_enrolled ? "✓ Active" : "Missing"],
-                   ["Hardware", profile?.bound_device_id ? "✓ Bound" : "Unbound"],
+                   ["Hardware", profile?.device_info ? "✓ Bound" : "Unbound"],
                  ].map(([label, value]) => (
                    <div key={label as string} className="flex justify-between items-center p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-border/40">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{label as string}</span>

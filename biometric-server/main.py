@@ -2,11 +2,21 @@ import base64
 import numpy as np
 import cv2
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from insightface.app import FaceAnalysis
 import os
 
 app = FastAPI(title="Smart Attendance Biometric Node")
+
+# Enable CORS for all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize InsightFace
 # buffalo_l is the large model, buffalo_s is the small one.

@@ -1,7 +1,7 @@
 import { Database } from "@/integrations/supabase/types";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"] & {
-  bound_device_id?: string | null;
+  device_info?: string | null;
 };
 export type Course = Database["public"]["Tables"]["courses"]["Row"];
 export type Session = Database["public"]["Tables"]["attendance_sessions"]["Row"];
