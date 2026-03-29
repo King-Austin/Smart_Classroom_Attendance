@@ -27,12 +27,12 @@ const Landing = () => {
           <div className="w-20 h-20 rounded-3xl bg-zinc-900/50 border border-border flex items-center justify-center mx-auto mb-6 shadow-2xl backdrop-blur-xl">
             <ShieldCheck className="w-10 h-10 text-accent" />
           </div>
-          <p className="text-accent text-[10px] font-bold tracking-[0.4em] uppercase mb-3">Presence 2.0</p>
+          <p className="text-accent text-[10px] font-bold tracking-[0.4em] uppercase mb-3">Presence</p>
           <h1 className="text-4xl font-bold font-heading mb-4 tracking-tighter">
             Smart Attendance
           </h1>
           <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-            Next-generation attendance verification for the modern university ecosystem.
+            Fast, secure, and easy attendance tracking for your university classes.
           </p>
         </motion.div>
 
@@ -44,9 +44,9 @@ const Landing = () => {
           className="flex flex-wrap gap-2 justify-center mb-12"
         >
           {[
-            { icon: Scan, label: "Face ID" },
-            { icon: Wifi, label: "BLE Mesh" },
-            { icon: MapPin, label: "GPS Fence" },
+            { icon: Scan, label: "Face Scan" },
+            { icon: Wifi, label: "Close Reach" },
+            { icon: MapPin, label: "Location" },
           ].map(({ icon: Icon, label }) => (
             <span
               key={label}
@@ -79,7 +79,7 @@ const Landing = () => {
             className="w-full h-15 rounded-2xl border-2 border-accent/20 bg-accent/5 text-accent font-bold text-base hover:bg-accent/10 transition-all active:scale-95"
           >
             <BookOpen className="w-5 h-5 mr-3" />
-            Faculty Portal
+            Lecturer Portal
           </Button>
 
           <button

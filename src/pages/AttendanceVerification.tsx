@@ -55,11 +55,11 @@ const AttendanceVerification = () => {
   };
   
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { id: "init", label: "Security Protocol", status: "pending", message: "Awaiting initialization..." },
-    { id: "gps", label: "Geographical Sync", status: "pending", message: "Check campus proximity" },
-    { id: "ble", label: "Proximity Mesh", status: "pending", message: "Scanning for lecturer beacon" },
-    { id: "face", label: "Biometric Identity", status: "pending", message: "Face recognition required" },
-    { id: "upload", label: "Digital Signature", status: "pending", message: "Uploading encrypted data" },
+    { id: "init", label: "Verification", status: "pending", message: "Getting ready..." },
+    { id: "gps", label: "Location Check", status: "pending", message: "Check campus proximity" },
+    { id: "ble", label: "Close Reach", status: "pending", message: "Confirming hall proximity" },
+    { id: "face", label: "Face Scan", status: "pending", message: "Face recognition required" },
+    { id: "upload", label: "Saving Status", status: "pending", message: "Finalizing attendance" },
   ]);
 
   const [telemetry, setTelemetry] = useState({
@@ -78,7 +78,7 @@ const AttendanceVerification = () => {
       setCurrentStep("checking");
       
       // 0. Initialize
-      updateChecklist("init", "processing", "Establishing secure connection...");
+      updateChecklist("init", "processing", "Connecting to server...");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Authentication failed");
 
@@ -98,11 +98,11 @@ const AttendanceVerification = () => {
         setCurrentStep("success");
         return;
       }
-      updateChecklist("init", "completed", "Secure session established");
+      updateChecklist("init", "completed", "Connected successfully");
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 1. GPS Verification (Layer 1 Soft-Gate)
-      updateChecklist("gps", "processing", "Synchronizing GPS Nodes...");
+      // 1. GPS Verification
+      updateChecklist("gps", "processing", "Checking your location...");
       try {
         let position = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
@@ -139,15 +139,15 @@ const AttendanceVerification = () => {
         }
         
         setTelemetry(prev => ({ ...prev, lat: position.coords.latitude, lng: position.coords.longitude }));
-        updateChecklist("gps", "completed", `GPS Verified: ~${Math.round(effectiveDistance)}m deviation`);
+        updateChecklist("gps", "completed", "Location confirmed");
       } catch (gpsError: any) {
         updateChecklist("gps", "failed", gpsError.message || "GPS Timeout");
         throw gpsError;
       }
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 2. BLE Mesh (Optional Proximity)
-      updateChecklist("ble", "processing", "Establishing proximity mesh...");
+      // 2. Proximity
+      updateChecklist("ble", "processing", "Checking proximty to hall...");
       try {
         const isBleSupported = typeof navigator !== 'undefined' && 'bluetooth' in navigator;
         if (!isBleSupported) {
@@ -164,7 +164,7 @@ const AttendanceVerification = () => {
           if (found) {
             updateChecklist("ble", "completed", "Beacon proximity confirmed");
           } else {
-            updateChecklist("ble", "completed", "Proximity established via GPS fallback");
+            updateChecklist("ble", "completed", "Proximity established");
           }
         }
       } catch (e) {
@@ -172,8 +172,8 @@ const AttendanceVerification = () => {
       }
       await Haptics.impact({ style: ImpactStyle.Light });
 
-      // 3. Face Identity (Refined Protocol)
-      updateChecklist("face", "processing", "Awaiting biometric signature...");
+      // 3. Face Identity
+      updateChecklist("face", "processing", "Waiting for face scan...");
       
       // 3a. Fetch stored vector for comparison
       const { data: vectorData, error: vectorError } = await supabase
@@ -183,7 +183,7 @@ const AttendanceVerification = () => {
         .maybeSingle();
       
       if (vectorError || !vectorData) {
-        updateChecklist("face", "failed", "No biometric signature found. Please enroll first.");
+        updateChecklist("face", "failed", "Please enroll your face in your profile.");
         throw new Error("No enrollment data found.");
       }
 
@@ -195,12 +195,12 @@ const AttendanceVerification = () => {
       setCapturedPhoto(photoBase64);
 
       // 3c. FastAPI Sync
-      updateChecklist("face", "processing", "Synchronizing with Biometric Node...");
+      updateChecklist("face", "processing", "Verifying face...");
       const result = await verify(photoBase64, storedVector);
 
       if (!result.success) {
         console.warn(`[PROTOCOL BREACH] Biometric Mismatch: Similarity at ${Math.round(result.score * 100)}% (Threshold: 65%)`);
-        updateChecklist("face", "failed", `Identity Mismatch (Score: ${Math.round(result.score * 100)}%)`);
+        updateChecklist("face", "failed", "Face scan did not match.");
         toast.error("Identity Mismatch", {
           description: "Biometric signature does not match the enrolled profile. Try checking your lighting."
         });
@@ -208,11 +208,11 @@ const AttendanceVerification = () => {
       }
 
       setTelemetry(prev => ({ ...prev, score: result.score }));
-      updateChecklist("face", "completed", `Identity Verified (Match: ${Math.round(result.score * 100)}%)`);
+      updateChecklist("face", "completed", "Face verified");
       await Haptics.impact({ style: ImpactStyle.Light });
 
       // 4. Final Submission
-      updateChecklist("upload", "processing", "Signing digital attendance ledger...");
+      updateChecklist("upload", "processing", "Saving your attendance...");
       
       const blob = await (await fetch(`data:image/jpeg;base64,${photoBase64}`)).blob();
       const fileName = `${sessionData.id}/${user.id}_${Date.now()}.jpg`;
@@ -230,11 +230,11 @@ const AttendanceVerification = () => {
 
       if (recordError) throw recordError;
 
-      updateChecklist("upload", "completed", "Attendance ledger signed & secured");
+      updateChecklist("upload", "completed", "Attendance recorded!");
       await Haptics.impact({ style: ImpactStyle.Heavy });
       
       setCurrentStep("success");
-      toast.success("Verification Complete!");
+      toast.success("Done!");
 
     } catch (error: any) {
       console.error("Verification failed:", error);
@@ -266,24 +266,24 @@ const AttendanceVerification = () => {
               <div className="w-20 h-20 rounded-3xl bg-card border border-border flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl">
                 <ShieldCheck className="w-10 h-10 text-accent" />
               </div>
-              <p className="text-accent text-[10px] font-bold tracking-[0.4em] uppercase mb-2">Protocol Access</p>
-              <h1 className="text-3xl font-bold font-heading mb-3 tracking-tighter">Security Check</h1>
+              <p className="text-accent text-[10px] font-bold tracking-[0.4em] uppercase mb-2">Verification Check</p>
+              <h1 className="text-3xl font-bold font-heading mb-3 tracking-tighter">Attendance Check</h1>
 
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Confirm your identity within the lecture hall proximity to sign the attendance ledger.
+                Confirm your identity to mark your attendance.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-10">
               <div className="p-4 rounded-2xl bg-card border border-border backdrop-blur-sm">
                 <MapPin className="w-5 h-5 text-accent mb-2" />
-                <p className="text-xs font-bold text-foreground uppercase tracking-widest">GPS Lock</p>
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest">Location</p>
                 <p className="text-[10px] text-muted-foreground">Proximity match</p>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border backdrop-blur-sm">
                 <Camera className="w-5 h-5 text-accent mb-2" />
-                <p className="text-xs font-bold text-foreground uppercase tracking-widest">Face ID</p>
-                <p className="text-[10px] text-muted-foreground">Identity verification</p>
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest">Face Scan</p>
+                <p className="text-[10px] text-muted-foreground">Identity check</p>
               </div>
             </div>
 
@@ -291,7 +291,7 @@ const AttendanceVerification = () => {
               onClick={startVerification}
               className="w-full h-15 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-base shadow-[0_0_30px_rgba(var(--accent),0.2)] active:scale-95 transition-all"
             >
-              Begin Verification
+              Start Checking
             </Button>
           </motion.div>
         )}
@@ -309,7 +309,7 @@ const AttendanceVerification = () => {
                   <Scan className="w-8 h-8 text-accent animate-pulse" />
                 </div>
               </div>
-              <h1 className="text-xl font-bold tracking-tight">Running Protocols</h1>
+              <h1 className="text-xl font-bold tracking-tight">Checking...</h1>
               <p className="text-xs text-muted-foreground mt-1 uppercase tracking-widest">{session?.courses?.code}</p>
             </div>
 
@@ -361,7 +361,7 @@ const AttendanceVerification = () => {
             </div>
 
             <p className="text-center text-[10px] text-muted-foreground font-mono mt-10 uppercase tracking-widest">
-              Digital Secure Signature v2.0
+              Digital Attendance v2.0
             </p>
           </motion.div>
         )}
@@ -376,14 +376,14 @@ const AttendanceVerification = () => {
                 className="absolute inset-0 bg-accent rounded-full" 
               />
             </div>
-            <h1 className="text-3xl font-bold font-heading mb-4">Verified!</h1>
+            <h1 className="text-3xl font-bold font-heading mb-4">Confirmed!</h1>
             <p className="text-muted-foreground text-sm mb-10 px-4">
-              Your attendance for <span className="text-foreground font-bold">{session?.courses?.code}</span> has been securely signed and submitted.
+              Your attendance for <span className="text-foreground font-bold">{session?.courses?.code}</span> has been confirmed.
             </p>
             
             <div className="bg-card border border-border rounded-3xl p-6 text-left mb-10">
               <div className="flex justify-between items-center pb-4 border-b border-border mb-4">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Digital Token</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">ID</span>
                 <span className="text-xs font-mono text-foreground/70">#{sessionId?.slice(-8).toUpperCase()}</span>
               </div>
               <div className="space-y-2">
@@ -402,7 +402,7 @@ const AttendanceVerification = () => {
               onClick={() => navigate("/student")}
               className="w-full h-15 rounded-2xl bg-foreground text-background font-bold hover:bg-foreground/90 transition-all shadow-xl"
             >
-              Finish Protocol
+              Finish
             </Button>
           </motion.div>
         )}
@@ -412,9 +412,9 @@ const AttendanceVerification = () => {
             <div className="w-20 h-20 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto mb-6">
               <XCircle className="w-10 h-10 text-destructive" />
             </div>
-            <h1 className="text-2xl font-bold font-heading mb-3">Verification Failed</h1>
+            <h1 className="text-2xl font-bold font-heading mb-3">Attendance Failed</h1>
             <p className="text-muted-foreground text-sm mb-12 px-6">
-              Security requirements were not met. Please ensure you have GPS enabled and are within the lecture hall boundary.
+              Could not confirm your attendance. Please ensure you have GPS enabled and are within the lecture hall boundary.
             </p>
             
             <div className="space-y-4">
@@ -425,7 +425,7 @@ const AttendanceVerification = () => {
                 }}
                 className="w-full h-15 rounded-2xl bg-foreground text-background font-bold hover:bg-foreground/90"
               >
-                Retry Protocol
+                Try Again
               </Button>
               <Button
                 variant="ghost"

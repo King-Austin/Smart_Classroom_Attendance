@@ -58,7 +58,7 @@ const LecturerDashboard = () => {
       {/* Header */}
       <div className="px-5 pt-6 pb-4 flex items-center justify-between relative z-10">
         <div>
-          <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-1">Faculty Portal</p>
+          <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-1">Lecturer Dashboard</p>
           <h1 className="text-2xl font-bold font-heading tracking-tight">Hi, {profile?.full_name?.split(' ')[0] || 'Lecturer'} 👋</h1>
         </div>
         <div className="flex gap-2">
@@ -89,8 +89,8 @@ const LecturerDashboard = () => {
                 className="flex-1 p-5 rounded-[2rem] bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-between shadow-xl group transition-all"
               >
                 <div className="flex flex-col items-start gap-1">
-                   <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Protocol Launch</p>
-                   <span className="text-sm font-bold uppercase tracking-tight">Create Session</span>
+                   <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Add Session</p>
+                   <span className="text-sm font-bold uppercase tracking-tight">Start Class</span>
                 </div>
                 <div className="w-10 h-10 rounded-2xl bg-white/10 dark:bg-black/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                    <Plus className="w-6 h-6" />
@@ -112,11 +112,11 @@ const LecturerDashboard = () => {
                  <div className="relative z-10 flex flex-col gap-10">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2 leading-none">Global Presence Metric</p>
+                        <p className="text-[10px] font-black text-accent uppercase tracking-[0.4em] mb-2 leading-none">Attendance Score</p>
                         <h2 className="text-5xl font-black font-heading tracking-tighter tabular-nums">{stats.avgRate}%</h2>
                       </div>
                       <div className="text-right">
-                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 leading-none">Network Reach</p>
+                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 leading-none">Total Students</p>
                          <p className="text-2xl font-black tabular-nums">{stats.totalStudents}</p>
                       </div>
                     </div>
@@ -137,13 +137,13 @@ const LecturerDashboard = () => {
                     
                     <div className="grid grid-cols-2 gap-4">
                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
-                          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">Active Nodes</p>
+                          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">My Courses</p>
                           <p className="text-xl font-black font-heading tabular-nums">{stats.courseCount}</p>
                        </div>
                        <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 backdrop-blur-md">
                           <div className="flex items-center gap-2 mb-2">
                             <TrendingUp className="w-3.5 h-3.5 text-accent" />
-                            <p className="text-[9px] font-black text-accent uppercase tracking-[0.2em]">Efficiency</p>
+                            <p className="text-[9px] font-black text-accent uppercase tracking-[0.2em]">Growth</p>
                           </div>
                           <p className="text-xl font-black font-heading tabular-nums">+12.4%</p>
                        </div>
@@ -180,7 +180,7 @@ const LecturerDashboard = () => {
                           <div className="flex items-center gap-3">
                              <div className="px-3 py-1 rounded-full bg-accent/10 border border-accent/30">
                                 <span className="text-[9px] text-accent font-black uppercase tracking-widest tabular-nums">
-                                   {session.present} Pulse Detected
+                                   {session.present} Students Present
                                 </span>
                              </div>
                           </div>
@@ -207,12 +207,12 @@ const LecturerDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-3 px-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
-                <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em]">Historical Archival Ledger</h2>
+                <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em]">Past Sessions</h2>
               </div>
               <div className="space-y-4">
                 {recentSessions.length === 0 ? (
                   <div className="p-16 text-center bg-card/10 backdrop-blur-md rounded-[3rem] border border-dashed border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">End of Transmission</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">No Sessions Found</p>
                   </div>
                 ) : (
                   recentSessions.slice(0, 8).map((session) => (

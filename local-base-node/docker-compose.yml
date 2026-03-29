@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  base-local-node:
+    build: .
+    container_name: base-local-node
+    ports:
+      - "8545:8545" # Map local port 8545 to container port 8545
+    
+    # UNCOMMENT the command line below if you want your local node to mirror Base Mainnet exactly
+    # command: ["--fork-url", "https://mainnet.base.org", "--chain-id", "8453"]
+    
+    # UNCOMMENT this if you want to mirror Base Sepolia (Testnet)
+    # command: ["--fork-url", "https://sepolia.base.org", "--chain-id", "84532"]

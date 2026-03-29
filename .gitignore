@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+attendace2/
+android/
+ios/
 
 # Editor directories and files
 .vscode/*

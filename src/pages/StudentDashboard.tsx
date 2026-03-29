@@ -174,7 +174,9 @@ const StudentDashboard = () => {
 
         if (profileError) throw new Error(`Profile Update Fail: ${profileError.message}`);
         
-        toast.success("Profile Re-enrolled", { description: "Your biometric signature is now in the vault." });
+        toast.success("Identity Verified", {
+          description: "Your session is now linked to this device."
+        });
       } 
       else if (debugFlow === "verify") {
         console.log("DEBUG: Starting Verification Test...");
@@ -222,7 +224,9 @@ const StudentDashboard = () => {
   if (profileLoading && !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <PresenceLoader message="Synchronizing Protocol..." />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <PresenceLoader message="Loading..." />
+      </div>
       </div>
     );
   }
@@ -239,8 +243,10 @@ const StudentDashboard = () => {
 
       <div className="px-5 pt-6 pb-4 flex items-center justify-between relative z-20">
         <div>
-          <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-1">Student Node</p>
-          <h1 className="text-2xl font-bold font-heading tracking-tight">Active Portal</h1>
+        <div>
+          <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-1">Student Profile</p>
+          <h1 className="text-2xl font-bold font-heading tracking-tight">Dashboard</h1>
+        </div>
         </div>
         <div className="flex gap-2">
           <ThemeToggle />
@@ -282,11 +288,11 @@ const StudentDashboard = () => {
               attended={stats.attendedSessions}
               total={stats.totalSessions}
               ranking={
-                stats.overallProgress >= 95 ? "Top 5% of your department" :
-                stats.overallProgress >= 85 ? "Top 15% of your department" :
-                stats.overallProgress >= 70 ? "Top 30% of your department" :
-                stats.overallProgress >= 50 ? "Top 50% of your department" :
-                "Keep pushing for Top 50%!"
+                stats.overallProgress >= 95 ? "Top 5% of class" :
+                stats.overallProgress >= 85 ? "Top 15% of class" :
+                stats.overallProgress >= 70 ? "Top 30% of class" :
+                stats.overallProgress >= 50 ? "Top 50% of class" :
+                "Keep going for top 50%!"
               }
               loading={statsLoading}
             />
@@ -306,18 +312,18 @@ const StudentDashboard = () => {
               </div>
             ) : (
               <div className="py-12 text-center rounded-[2.5rem] border border-dashed border-border bg-card/30 backdrop-blur-md">
-                 <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                 <div className="w-12 h-12 bg-zinc-100 dark:bg-card rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <BookOpen className="w-6 h-6 text-zinc-400" />
                  </div>
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">No Active Sessions</p>
-                 <p className="text-xs text-zinc-500 mt-1">Check back when your lecture starts.</p>
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">No Current Classes</p>
+                 <p className="text-xs text-muted-foreground/60 mt-1">Check back when your lecture starts.</p>
               </div>
             )}
 
             {/* Recent History */}
             {history.length > 0 && (
               <div>
-                <h2 className="text-xs font-bold text-muted-foreground mb-4 px-1 uppercase tracking-widest">Recent Activity</h2>
+                <h2 className="text-xs font-bold text-muted-foreground mb-4 px-1 uppercase tracking-widest">Recent Attendance</h2>
                 <div className="space-y-3">
                   {history.map((item, i) => (
                     <motion.div 
@@ -369,7 +375,7 @@ const StudentDashboard = () => {
               </div>
               <div className="p-6 rounded-[2.5rem] bg-card border border-border text-center shadow-lg">
                 <p className="text-3xl font-bold text-foreground font-heading">{courses.length}</p>
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Enrollments</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Enrollments</p>
               </div>
             </div>
           </motion.div>
@@ -382,7 +388,7 @@ const StudentDashboard = () => {
             animate={{ opacity: 1 }} 
             className="px-5 space-y-6 relative z-10"
           >
-            <h2 className="text-xl font-bold font-heading mb-6 px-1 tracking-tight">Identity & Vault</h2>
+            <h2 className="text-xl font-bold font-heading mb-6 px-1 tracking-tight">Account Details</h2>
             
             {/* Identity Card */}
             <div className="p-6 rounded-[2.5rem] bg-card/60 backdrop-blur-xl border border-border shadow-2xl">
@@ -429,7 +435,7 @@ const StudentDashboard = () => {
               <div className="p-8 rounded-[2.5rem] bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-6">
                   <ShieldCheck className="w-4 h-4 text-amber-500" />
-                  <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Debug Protocol Terminal</h3>
+                  <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">System Support</h3>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -441,22 +447,22 @@ const StudentDashboard = () => {
                     }}
                     className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
                   >
-                    Re-enroll Face
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      console.log("DEBUG: Triggering Manual Verification Test...");
-                      setDebugFlow("verify");
-                    }}
-                    className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    Verify Face
-                  </Button>
-                </div>
-                <p className="mt-4 text-[9px] text-amber-500/70 font-medium leading-relaxed italic">
-                  * Use these buttons to test ImageSight reliability across different lighting or faces. All results are logged in the browser console.
-                </p>
+                  Recapture Face
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    console.log("DEBUG: Triggering Manual Verification Test...");
+                    setDebugFlow("verify");
+                  }}
+                  className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
+                >
+                  Test Scan
+                </Button>
+              </div>
+              <p className="mt-4 text-[9px] text-amber-500/70 font-medium leading-relaxed italic">
+                * Use these to test face scan reliability.
+              </p>
               </div>
             )}
 
@@ -469,15 +475,15 @@ const StudentDashboard = () => {
                 <div>
                   <h2 className="text-xs font-black text-accent uppercase tracking-[0.3em] flex items-center gap-2 mb-1">
                     <BookOpen className="w-3.5 h-3.5" />
-                    Protocol Registry
+                    My Courses
                   </h2>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Active Course Enrollment</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Active Enrollments</p>
                 </div>
                 <button 
                   onClick={() => setEditMode(true)}
                   className="text-[10px] font-black text-accent uppercase tracking-widest px-4 py-2.5 rounded-2xl bg-accent/5 border border-accent/20 hover:bg-accent/10 active:scale-95 transition-all shadow-sm"
                 >
-                  Edit Bundle
+                  Add Courses
                 </button>
               </div>
               

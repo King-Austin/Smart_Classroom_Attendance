@@ -112,3 +112,27 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 }
+
+/* Performance & Accessibility Optimizations */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.blur-premium {
+  @apply backdrop-blur-md;
+}
+
+.motion-safe-transition {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-optimized {
+  @apply opacity-30 blur-[80px];
+}

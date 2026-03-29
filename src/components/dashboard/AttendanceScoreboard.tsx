@@ -12,7 +12,7 @@ interface AttendanceScoreboardProps {
 export const AttendanceScoreboard = ({ progress, attended, total, ranking, loading }: AttendanceScoreboardProps) => {
   if (loading) {
     return (
-      <div className="h-48 w-full rounded-3xl bg-zinc-900/50 animate-pulse border border-zinc-800" />
+      <div className="h-48 w-full rounded-3xl bg-card border border-border animate-pulse" />
     );
   }
 
@@ -20,7 +20,7 @@ export const AttendanceScoreboard = ({ progress, attended, total, ranking, loadi
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-6 mb-8"
+      className="relative overflow-hidden rounded-3xl bg-card border border-border p-6 mb-8 shadow-sm"
     >
       {/* Background Glow */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full -mr-16 -mt-16" />
@@ -33,9 +33,10 @@ export const AttendanceScoreboard = ({ progress, attended, total, ranking, loadi
               cx="64"
               cy="64"
               r="58"
-              stroke="#18181b"
+              stroke="hsl(var(--muted))"
               strokeWidth="10"
               fill="transparent"
+              className="opacity-20"
             />
             <motion.circle
               cx="64"
@@ -52,29 +53,29 @@ export const AttendanceScoreboard = ({ progress, attended, total, ranking, loadi
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold font-heading">{progress}%</span>
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Score</span>
+            <span className="text-2xl font-bold font-heading text-foreground">{progress}%</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Score</span>
           </div>
         </div>
 
         {/* Stats Content */}
         <div className="flex-1 grid grid-cols-2 gap-4 w-full">
-          <div className="p-4 rounded-2xl bg-zinc-950/50 border border-zinc-800/50">
+          <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-accent" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Attended</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Attended</span>
             </div>
-            <p className="text-xl font-bold font-heading">{attended}</p>
-            <p className="text-[10px] text-zinc-600">Sessions confirmed</p>
+            <p className="text-xl font-bold font-heading text-foreground">{attended}</p>
+            <p className="text-[10px] text-muted-foreground font-medium">Sessions confirmed</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-zinc-950/50 border border-zinc-800/50">
+          <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-accent" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total</span>
             </div>
-            <p className="text-xl font-bold font-heading">{total}</p>
-            <p className="text-[10px] text-zinc-600">Active sessions</p>
+            <p className="text-xl font-bold font-heading text-foreground">{total}</p>
+            <p className="text-[10px] text-muted-foreground font-medium">Active sessions</p>
           </div>
 
           <div className="col-span-2 p-4 rounded-2xl bg-accent/5 border border-accent/20 flex items-center justify-between">
@@ -83,8 +84,8 @@ export const AttendanceScoreboard = ({ progress, attended, total, ranking, loadi
                 <Award className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <p className="text-sm font-bold">Academic Ranking</p>
-                <p className="text-[10px] text-zinc-500">{ranking || "Calculating ranking..."}</p>
+                <p className="text-sm font-bold text-foreground">Academic Ranking</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{ranking || "Calculating ranking..."}</p>
               </div>
             </div>
             <TrendingUp className="w-5 h-5 text-accent/50" />

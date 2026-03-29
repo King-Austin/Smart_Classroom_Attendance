@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Camera, ChevronRight, Loader2, Fingerprint } from "lucide-react";
+import { NotificationType } from "@capacitor/haptics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +76,7 @@ const StudentRegister = () => {
     setFaceImages(images);
     setIsLivenessOpen(false);
     Haptics.impact({ style: ImpactStyle.Heavy });
-    toast.success("Biometric Scan Complete");
+    toast.success("Face Scan Complete");
   };
 
   const handleSubmit = async () => {
@@ -199,13 +200,13 @@ const StudentRegister = () => {
         if (enrollError) console.error("Failsafe: Enrollment failed but profile persists:", enrollError);
       }
 
-      Haptics.notification({ type: ImpactStyle.Heavy });
+      Haptics.notification({ type: NotificationType.Success });
       toast.success("Identity Secured. Registration Successful!");
       navigate("/login");
 
     } catch (error: any) {
       console.error("Failsafe Triggered - Registration Rollback Mode:", error);
-      Haptics.notification({ type: ImpactStyle.Medium });
+      Haptics.notification({ type: NotificationType.Error });
       
       // Cleanup Strategy: Remove orphaned files if possible
       if (uploadedFilePaths.length > 0) {
@@ -215,7 +216,7 @@ const StudentRegister = () => {
         });
       }
 
-      toast.error(error.message || "Protocol Interrupted. Please retry.");
+      toast.error(error.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
       setIsVectorizing(false);
@@ -402,8 +403,8 @@ const StudentRegister = () => {
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-foreground">
-                    {faceImages.length === 0 ? "Liveness Protocol" : 
-                     faceImages.length === 3 ? "Biometric Data Ready" : 
+                    {faceImages.length === 0 ? "Face Scan" : 
+                     faceImages.length === 3 ? "Face Data Ready" : 
                      `Captured ${faceImages.length}/3 Angles`}
                   </p>
                   <div className="flex flex-col gap-1 mt-2">
@@ -421,7 +422,7 @@ const StudentRegister = () => {
                 variant={faceImages.length > 0 ? "outline" : "default"}
                 className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
               >
-                {faceImages.length > 0 ? "Recapture Biometrics" : "Start Liveness Scan"}
+                {faceImages.length > 0 ? "Retake Photo" : "Start Face Scan"}
               </Button>
 
               <Button
@@ -432,7 +433,7 @@ const StudentRegister = () => {
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {isVectorizing ? "ImageSight Vectorization..." : "Binding Digital ID..."}
+                    {isVectorizing ? "Analyzing face..." : "Saving profile..."}
                   </div>
                 ) : (
                   "Complete Enrollment"

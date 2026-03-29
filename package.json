@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ship": "npm run build && npx @capgo/cli upload --apikey 1e9ddb9d-9c5e-4429-95ef-96077b822f08 --app-id com.smartattendance.app --bundle dist"
+    "ship": "npm run build && npx @capgo/cli upload --apikey $CAPGO_TOKEN --app-id $CAPGO_APP_ID --bundle dist"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.1.3",
