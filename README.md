@@ -1,109 +1,18 @@
-# 🎓 Smart Attendance
+# Smart Classroom Attendance 🎓
 
-**Smart Campus Presence** is a high-integrity, real-time attendance management system designed specifically for modern engineering faculties (starting with ECE). It solves the problem of "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
+A high-integrity, real-time campus attendance system with multi-factor verification. This robust solution combats attendance fraud and streamlines the tracking process for modern educational institutions.
 
----
+## ✨ Key Features
+- **Biometric Verification**: Utilizes advanced facial recognition (Face Signature) for precise identity validation.
+- **Geo-fencing (GPS)**: Ensures students are strictly within the predefined geographical boundaries of the classroom.
+- **Proximity Detection (BLE)**: Leverages Bluetooth Low Energy to verify physical presence against an indoor beacon.
+- **Real-time Synchronization**: Powered by Supabase for instant database updates and offline resilience.
+- **Cross-Platform Compatibility**: Built with React and Capacitor for seamless native mobile application deployment.
 
-## 🚀 Key Features
+## 🛠️ Tech Stack
+- **Frontend / Mobile**: React.js, TypeScript, Capacitor
+- **Backend & Database**: Supabase (PostgreSQL)
+- **Additional Technologies**: Geolocation API, Web Bluetooth API (BLE)
 
-### 🛡️ Multi-Factor Verification (The "Protocol")
-*   **Face Signature (ImageSight)**: Uses advanced face enrollment with liveness detection (Center, Right, Left) to ensure only the physical student can sign in.
-*   **Geo-Fencing**: Lecturers set a GPS perimeter. Attendance is only valid if the student is physically within the classroom boundaries.
-*   **BLE Proximity**: Uses Bluetooth Low Energy beacons to verify that the student's device is within physical range of the lecturer's broadcasting node.
-*   **Device Binding**: Prevents students from signing in for peers by locking their account to a unique hardware ID during the first verification.
-
-### 📊 Role-Based Dashboards
-*   **Student Portal**: Real-time attendance scoreboard, academic ranking (Top % of department), course management, and a secure "Identity Vault" for biometric records.
-*   **Lecturer Portal**: Protocol Launchpad for creating sessions, real-time "Attendance Feed" of arriving students, and automated data visualization for faculty audits.
-
-### ⚡ Technical Edge
-*   **Real-time Synchronization**: Powered by Supabase Realtime for instant updates between lecturers and students.
-*   **OTA (Over-The-Air) Updates**: Integrated with CapGo to push UI/Logic changes directly to installed Android/iOS apps without requiring store updates.
-*   **Haptic Feedback**: Deep integration with mobile haptics for a premium, tactile user experience.
-
----
-
-## 🧬 Biometric Server (InsightFace Node)
-
-The application uses an external stateless FastAPI server for face vectorization and verification.
-
-### Cloud Deployment (Railway / Koyeb)
-1. **Memory Requirement:** Min **1GB RAM** (Recommend 2GB). InsightFace is heavy on memory.
-2. **First Run:** The Docker image is "baked" with the model weights (~200MB) to ensure instant startup without timeouts.
-3. **Internal Connection:** Use the internal network URL if both the app and server are on the same cloud provider.
-
-### API Endpoints
-- `POST /enroll`: Returns 512-dim face embedding from an image.
-- `POST /verify`: Compares live image against stored vector.
-
----
-
-## 🛠️ Technology Stack
-
-*   **Frontend**: React (Vite) + TypeScript
-*   **Mobile**: CapacitorJS (Native Bridge)
-*   **Backend & DB**: Supabase (PostgreSQL + Auth + Realtime + Storage)
-*   **Styling**: Tailwind CSS + Shadcn/UI (Custom Premium Dark Theme)
-*   **Animations**: Framer Motion
-*   **State Mgmt**: TanStack Query (React Query)
-
----
-
-## 📦 Getting Started for Collaborators
-
-### 1. Prerequisite Setup
-*   **Node.js**: v20+
-*   **Capacitor CLI**: `npm install -g @capacitor/cli`
-*   **Android Studio**: For native builds.
-
-### 2. Installation
-```sh
-git clone <repo-url>
-cd smart-campus-presence
-npm install
-```
-
-### 3. Environment Config
-Create a `.env` file in the root with your credentials:
-```env
-VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-CAPGO_TOKEN=your_capgo_api_key
-CAPGO_APP_ID=com.smartattendance.app
-```
-
-### 4. Local Development
-```sh
-# Run in browser
-npm run dev
-
-# Run on Android with Live Reload
-npx cap run android --livereload
-```
-
----
-
-## 🚢 Deployment & OTA Strategy
-
-This project uses a **Hybrid Deployment Model**:
-
-1.  **Native Shell**: Built once as an APK/AAB and installed on devices.
-2.  **Web OTA**: Daily updates and bug fixes are pushed via CapGo.
-    *   **Manual Update**: Run `npm run ship` to push local changes to all users instantly.
-    *   **Automated (CI/CD)**: Every push to `main` triggers a GitHub Action to deploy the new bundle.
-
----
-
-## 🤝 Project Structure
-*   `/src/components`: UI components, verification modules (LivenessScanner), and dashboards.
-*   `/src/hooks`: Custom hooks for real-time stats, profile management, and session tracking.
-*   `/src/pages`: Higher-level route components (Dashboards, Register, Session Launch).
-*   `/supabase/functions`: Edge functions for backend-heavy processing.
-*   `/.github/workflows`: CI/CD pipelines for OTA and builds.
-
----
-
-## 📜 Documentation & Guidelines
-Please follow the **Atomic UI** pattern. Ensure all new components respect the dark-themed premium design system and use `Haptics` for meaningful interactions.
-
-**Smart Campus Presence v2.4 (Production Ready)**
+## 🚀 Impact
+This system represents a significant leap forward in automated, zero-trust attendance management, suitable for large lecture halls and secure campus environments.
