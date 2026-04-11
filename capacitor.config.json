@@ -3,10 +3,6 @@
   "appName": "Smart Attendance",
   "webDir": "dist",
   "plugins": {
-    "extConfig": {},
-    "CapacitorUpdater": {
-      "appId": "com.smartattendance.app",
-      "autoUpdate": true
-    }
+    "extConfig": {}
   }
 }
