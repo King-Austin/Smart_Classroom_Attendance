@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc:*)",
+      "Read(//c/Users/kingaustin/**)",
+      "Bash(curl -o flutter_windows.zip \"https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.24.0-stable.zip\")",
+      "Bash(unzip -q flutter_windows.zip)"
+    ]
+  }
+}

@@ -1,109 +1,76 @@
 # 🎓 Smart Attendance
 
-**Smart Campus Presence** is a high-integrity, real-time attendance management system designed specifically for modern engineering faculties (starting with ECE). It solves the problem of "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
+**Smart Campus Presence** is a high-integrity, real-time attendance management system designed for modern campuses. It eliminates "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
 
 ---
 
 ## 🚀 Key Features
 
-### 🛡️ Multi-Factor Verification (The "Protocol")
-*   **Face Signature (ImageSight)**: Uses advanced face enrollment with liveness detection (Center, Right, Left) to ensure only the physical student can sign in.
-*   **Geo-Fencing**: Lecturers set a GPS perimeter. Attendance is only valid if the student is physically within the classroom boundaries.
-*   **BLE Proximity**: Uses Bluetooth Low Energy beacons to verify that the student's device is within physical range of the lecturer's broadcasting node.
-*   **Device Binding**: Prevents students from signing in for peers by locking their account to a unique hardware ID during the first verification.
+### 🛡️ Multi-Factor Verification
+*   **Face Signature**: Centralized face enrollment with liveness detection via the dedicated Biometric API.
+*   **Geo-Fencing**: Dynamic GPS perimeter verification for session-specific attendance.
+*   **BLE Proximity**: Proof-of-presence via Bluetooth Low Energy broadcasting.
+*   **Device Binding**: Hardware-level account locking to prevent identity sharing.
 
 ### 📊 Role-Based Dashboards
-*   **Student Portal**: Real-time attendance scoreboard, academic ranking (Top % of department), course management, and a secure "Identity Vault" for biometric records.
-*   **Lecturer Portal**: Protocol Launchpad for creating sessions, real-time "Attendance Feed" of arriving students, and automated data visualization for faculty audits.
-
-### ⚡ Technical Edge
-*   **Real-time Synchronization**: Powered by Supabase Realtime for instant updates between lecturers and students.
-*   **OTA (Over-The-Air) Updates**: Integrated with CapGo to push UI/Logic changes directly to installed Android/iOS apps without requiring store updates.
-*   **Haptic Feedback**: Deep integration with mobile haptics for a premium, tactile user experience.
+*   **Student Portal**: Attendance heartbeats, academic rankings, and secure identity management.
+*   **Lecturer Portal**: Session management console with real-time analytics and attendance feeds.
 
 ---
 
-## 🧬 Biometric Server (InsightFace Node)
+## ⚒️ Technology Stack
 
-The application uses an external stateless FastAPI server for face vectorization and verification.
-
-### Cloud Deployment (Railway / Koyeb)
-1. **Memory Requirement:** Min **1GB RAM** (Recommend 2GB). InsightFace is heavy on memory.
-2. **First Run:** The Docker image is "baked" with the model weights (~200MB) to ensure instant startup without timeouts.
-3. **Internal Connection:** Use the internal network URL if both the app and server are on the same cloud provider.
-
-### API Endpoints
-- `POST /enroll`: Returns 512-dim face embedding from an image.
-- `POST /verify`: Compares live image against stored vector.
-
----
-
-## 🛠️ Technology Stack
-
-*   **Frontend**: React (Vite) + TypeScript
+*   **Frontend**: React 18 (Vite) + TypeScript
 *   **Mobile**: CapacitorJS (Native Bridge)
-*   **Backend & DB**: Supabase (PostgreSQL + Auth + Realtime + Storage)
-*   **Styling**: Tailwind CSS + Shadcn/UI (Custom Premium Dark Theme)
-*   **Animations**: Framer Motion
-*   **State Mgmt**: TanStack Query (React Query)
+*   **Runtime**: Node.js (Primary) / Bun (Legacy support)
+*   **Backend & DB**: Supabase (PostgreSQL + Realtime + Vector Engine)
+*   **Styling**: Tailwind CSS + Shadcn/UI
+*   **Automation**: CapGo (OTA Updates)
 
 ---
 
-## 📦 Getting Started for Collaborators
+## ☁️ Biometric Infrastructure
+
+The project uses a high-performance **InsightFace** implementation deployed on Railway.
+
+- **Primary Endpoint**: `https://smartclassroomattendance.up.railway.app`
+- **Core Logic**: Stateless face vectorization (512-dim embeddings) and similarity scoring.
+
+---
+
+## 📦 Installation & Setup
 
 ### 1. Prerequisite Setup
 *   **Node.js**: v20+
-*   **Capacitor CLI**: `npm install -g @capacitor/cli`
-*   **Android Studio**: For native builds.
+*   **Native Tools**: Android Studio (for Android builds) or Xcode (for iOS builds).
 
-### 2. Installation
+### 2. Quick Start
 ```sh
 git clone <repo-url>
 cd smart-campus-presence
 npm install
+npm run dev
 ```
 
 ### 3. Environment Config
-Create a `.env` file in the root with your credentials:
-```env
-VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-CAPGO_TOKEN=your_capgo_api_key
-CAPGO_APP_ID=com.smartattendance.app
-```
-
-### 4. Local Development
-```sh
-# Run in browser
-npm run dev
-
-# Run on Android with Live Reload
-npx cap run android --livereload
-```
+Copy `.env.example` to `.env` and populate it with your Supabase and Railway credentials.
 
 ---
 
-## 🚢 Deployment & OTA Strategy
+## 🚢 Deployment Strategy
 
-This project uses a **Hybrid Deployment Model**:
-
-1.  **Native Shell**: Built once as an APK/AAB and installed on devices.
-2.  **Web OTA**: Daily updates and bug fixes are pushed via CapGo.
-    *   **Manual Update**: Run `npm run ship` to push local changes to all users instantly.
-    *   **Automated (CI/CD)**: Every push to `main` triggers a GitHub Action to deploy the new bundle.
+- **Production Build**: `npm run build`
+- **Native Sync**: `npx cap sync`
+- **OTA Update**: `npm run ship` (pushes instant UI/logic updates via CapGo)
 
 ---
 
 ## 🤝 Project Structure
-*   `/src/components`: UI components, verification modules (LivenessScanner), and dashboards.
-*   `/src/hooks`: Custom hooks for real-time stats, profile management, and session tracking.
-*   `/src/pages`: Higher-level route components (Dashboards, Register, Session Launch).
-*   `/supabase/functions`: Edge functions for backend-heavy processing.
-*   `/.github/workflows`: CI/CD pipelines for OTA and builds.
 
----
+*   `/src`: Core application logic (components, hooks, pages).
+*   `/biometric-server`: Reference source for the Python-based Biometric API.
+*   `/supabase`: Database migrations and edge function definitions.
+*   `/android` & `/ios`: Native platform wrappers.
 
-## 📜 Documentation & Guidelines
-Please follow the **Atomic UI** pattern. Ensure all new components respect the dark-themed premium design system and use `Haptics` for meaningful interactions.
+**Version 2.5 (Clean & Production Ready)**
 
-**Smart Campus Presence v2.4 (Production Ready)**

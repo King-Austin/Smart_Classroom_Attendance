@@ -134,13 +134,13 @@ const StudentDashboard = () => {
     
     try {
       if (debugFlow === "enroll") {
-        console.log("DEBUG: Starting Re-enrollment Flow...");
+
         toast.info("Vectorizing Face...", { description: "Communicating with ImageSight Node" });
         
         const vector = await enroll(images[0]); // Using center face
         if (!vector) throw new Error("Biometric Vectorization failed");
         
-        console.log("DEBUG: Enrollment Success. Vector length:", vector.length);
+
         
         // 1. Clear existing biometrics for this user (Delete-before-Insert)
         const { error: deleteError } = await supabase
@@ -179,7 +179,7 @@ const StudentDashboard = () => {
         });
       } 
       else if (debugFlow === "verify") {
-        console.log("DEBUG: Starting Verification Test...");
+
         
         // Fetch stored vector
         const { data: vectorData } = await supabase
@@ -196,7 +196,7 @@ const StudentDashboard = () => {
         const storedVector = (vectorData.embedding as unknown) as number[];
         const result = await verify(images[0], storedVector);
         
-        console.log(`DEBUG: Verification Result - Match: ${result.success}, Score: ${result.score}, Liveness: ${result.liveness}`);
+
         
         if (result.success) {
           toast.success("Match Confirmed", { 
@@ -442,7 +442,7 @@ const StudentDashboard = () => {
                   <Button 
                     variant="outline"
                     onClick={() => {
-                      console.log("DEBUG: Triggering Manual Re-enrollment...");
+
                       setDebugFlow("enroll");
                     }}
                     className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"
@@ -452,7 +452,7 @@ const StudentDashboard = () => {
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    console.log("DEBUG: Triggering Manual Verification Test...");
+
                     setDebugFlow("verify");
                   }}
                   className="h-12 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-transparent hover:bg-amber-500/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest"

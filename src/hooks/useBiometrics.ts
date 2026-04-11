@@ -52,7 +52,7 @@ export const useBiometrics = () => {
           // Remove brackets and split if it's a pgvector string, or use JSON.parse
           const cleanString = (storedVector as string).replace('[', '').replace(']', '');
           finalVector = cleanString.split(',').map(Number);
-          console.log("Biometrics: Parsed string vector into array of length", finalVector.length);
+
         } catch (e) {
           console.error("Biometrics: Failed to parse vector string", e);
         }
