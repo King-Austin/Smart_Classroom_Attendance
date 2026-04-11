@@ -1,10 +1,12 @@
-# 🎓 Smart Attendance
-
-**Smart Campus Presence** is a high-integrity, real-time attendance management system designed for modern campuses. It eliminates "proxy attendance" using a multi-factor verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
+<div align="center">
+  <h1>Smart Campus Presence 🎓</h1>
+  <p><i>A high-integrity, real-time campus attendance system with multi-factor verification.</i></p>
+</div>
 
 ---
 
-## 🚀 Key Features
+## 📖 Overview
+**Smart Campus Presence** is a high-integrity, real-time attendance management system designed for modern campuses. It eliminates "proxy attendance" using a multi-layered verification protocol including **Biometrics**, **Geo-fencing**, and **Proximity Detection**.
 
 ### 🛡️ Multi-Factor Verification
 *   **Face Signature**: Centralized face enrollment with liveness detection via the dedicated Biometric API.
@@ -23,7 +25,7 @@
 *   **Frontend**: React 18 (Vite) + TypeScript
 *   **Mobile**: CapacitorJS (Native Bridge)
 *   **Runtime**: Node.js (Primary) / Bun (Legacy support)
-*   **Backend & DB**: Supabase (PostgreSQL + Realtime + Vector Engine)
+*   **Backend & DB**: Supabase (Postgres + Realtime + Vector Engine)
 *   **Styling**: Tailwind CSS + Shadcn/UI
 *   **Automation**: CapGo (OTA Updates)
 
@@ -38,6 +40,11 @@ The project uses a high-performance **InsightFace** implementation deployed on R
 
 ---
 
+## 🧑‍💻 For Developers / Recruiters
+This repository demonstrates technical capability in integrating complex device APIs (Bluetooth, Location, Camera) into a seamless front-end React stack while handling heavy identity-verification logic. It highlights a strong focus on **security**, **user-experience**, and **modern cloud architectures**.
+
+---
+
 ## 📦 Installation & Setup
 
 ### 1. Prerequisite Setup
@@ -46,14 +53,15 @@ The project uses a high-performance **InsightFace** implementation deployed on R
 
 ### 2. Quick Start
 ```sh
-git clone <repo-url>
+git clone https://github.com/King-Austin/smart-campus-presence.git
 cd smart-campus-presence
 npm install
 npm run dev
 ```
 
 ### 3. Environment Config
-Copy `.env.example` to `.env` and populate it with your Supabase and Railway credentials.
+Copy `.env.example` to `.env` and populate it with your Supabase and Railway credentials. 
+*Note: This project uses `VITE_` prefixed variables.*
 
 ---
 
@@ -72,5 +80,8 @@ Copy `.env.example` to `.env` and populate it with your Supabase and Railway cre
 *   `/supabase`: Database migrations and edge function definitions.
 *   `/android` & `/ios`: Native platform wrappers.
 
+---
+
 **Version 2.5 (Clean & Production Ready)**
 
+*Developed by [Nworah Ebuka Augustus](https://github.com/King-Austin) - Dedicated to building impactful technology.*
