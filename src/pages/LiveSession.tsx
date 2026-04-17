@@ -11,6 +11,8 @@ import { useSessionData } from "@/hooks/useSessionData";
 import { calculatePercentage } from "@/lib/utils";
 import { PresenceLoader } from "@/components/PresenceLoader";
 import { SESSION_STATUS, ATTENDANCE_STATUS } from "@/constants";
+import { useBlePeripheral } from "@/hooks/useBlePeripheral";
+
 import { calculateDuration } from "@/lib/date";
 import {
   DropdownMenu,
@@ -30,6 +32,8 @@ const LiveSession = () => {
   const navigate = useNavigate();
   const { sessionId } = useParams();
   const { session, records, totalEnrolled, loading, refresh } = useSessionData(sessionId);
+  const ble = useBlePeripheral(sessionId);
+
   
   const presentCount = records.filter(
     (r) => r.status === ATTENDANCE_STATUS.VERIFIED || r.status === "present"
@@ -39,6 +43,7 @@ const LiveSession = () => {
 
   const handleEndSession = async () => {
     try {
+      await ble.stopBroadcast();
       const { error } = await supabase
         .from("attendance_sessions")
         .update({ status: SESSION_STATUS.ENDED, ended_at: new Date().toISOString() })
@@ -51,6 +56,7 @@ const LiveSession = () => {
       toast.error("Failed to end session: " + err.message);
     }
   };
+
 
   if (loading && !session) {
     return (

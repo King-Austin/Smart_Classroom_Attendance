@@ -1,0 +1,1 @@
+# GitHub Actions Build Setup TODO&#10;&#10;- [x] Create TODO.md&#10;- [ ] Create .github/workflows/build-android.yml&#10;- [ ] Create .github/workflows/build-ios.yml&#10;- [ ] Commit and push to trigger workflows&#10;- [ ] Download artifacts from Actions tab

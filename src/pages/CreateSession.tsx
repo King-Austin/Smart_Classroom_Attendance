@@ -10,17 +10,22 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Geolocation } from "@capacitor/geolocation";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Course } from "@/types";
+import { useBlePeripheral } from "@/hooks/useBlePeripheral";
 import { LEVELS, SEMESTERS, DEFAULT_DEPARTMENT, SESSION_STATUS } from "@/constants";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateSession = () => {
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const ble = useBlePeripheral();
   
   const [form, setForm] = useState({
+
     level: "",
     semester: "",
     course: "",
@@ -106,8 +111,13 @@ const CreateSession = () => {
 
       if (error) throw error;
 
+      if (form.bleVerification && data) {
+        await ble.startBroadcast(bleToken);
+      }
+
       await Haptics.notification({ type: ImpactStyle.Heavy as any });
       toast.success("Session launched! Students can now join.");
+
       navigate(`/lecturer/session/${data.id}`);
     } catch (error: any) {
       console.error("Launch error:", error);
@@ -201,8 +211,9 @@ const CreateSession = () => {
                 <Switch
                   checked={form[key as keyof typeof form] as boolean}
                   onCheckedChange={(v) => updateForm(key, v)}
-                  disabled
+                  disabled={key === 'bleVerification'}
                 />
+
               </div>
             ))}
           </div>

@@ -22,3 +22,8 @@ export const SESSION_STATUS = {
   ACTIVE: "active",
   ENDED: "ended",
 } as const;
+
+export const BLE_CONFIG = {
+  SERVICE_UUID: '12345678-1234-1234-1234-123456789abc',
+  TOKEN_CHARACTERISTIC_UUID: '87654321-4321-4321-4321-cba987654321',
+} as const;
