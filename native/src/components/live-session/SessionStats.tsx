@@ -1,3 +1,8 @@
+/**
+ * Smart Campus Presence — SessionStats (Live Session)
+ *
+ * 2-column stat grid showing Present count (accented) and Total Enrolled.
+ */
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Colors } from '@/theme/colors';
@@ -22,15 +27,10 @@ function StatCard({ label, value, sub, accent = false }: StatCardProps) {
         flex: 1,
         padding: 16,
         borderRadius: 16,
-        backgroundColor: accent
-          ? 'rgba(0,229,255,0.05)'
-          : `${Colors.card}99`,
+        backgroundColor: accent ? 'rgba(0,229,255,0.05)' : `${Colors.card}99`,
         borderWidth: 1,
-        borderColor: accent
-          ? 'rgba(0,229,255,0.20)'
-          : Colors.border,
+        borderColor: accent ? 'rgba(0,229,255,0.20)' : Colors.border,
         overflow: 'hidden',
-        position: 'relative',
       }}
     >
       {/* Label */}
@@ -74,7 +74,7 @@ function StatCard({ label, value, sub, accent = false }: StatCardProps) {
         </Text>
       </View>
 
-      {/* Bottom accent bar for the "present" card */}
+      {/* Accent bottom bar */}
       {accent && (
         <View
           style={{
@@ -100,18 +100,8 @@ export function SessionStats({ present, total, rate }: SessionStatsProps) {
         marginBottom: 16,
       }}
     >
-      <StatCard
-        label="Enrolled"
-        value={total}
-        sub="Students"
-        accent={false}
-      />
-      <StatCard
-        label="Present"
-        value={present}
-        sub={`${rate}% Rate`}
-        accent
-      />
+      <StatCard label="Enrolled" value={total} sub="Students" accent={false} />
+      <StatCard label="Present" value={present} sub={`${rate}% Rate`} accent />
     </View>
   );
 }
