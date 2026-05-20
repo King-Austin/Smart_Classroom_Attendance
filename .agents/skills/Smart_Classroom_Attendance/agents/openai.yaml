@@ -1,0 +1,6 @@
+interface:
+  display_name: "Smart Classroom Attendance"
+  short_description: "Repo-specific patterns and workflows for Smart_Classroom_Attendance"
+  default_prompt: "Use the Smart_Classroom_Attendance repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
