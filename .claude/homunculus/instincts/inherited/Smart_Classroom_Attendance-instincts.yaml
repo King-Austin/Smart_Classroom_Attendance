@@ -1,0 +1,593 @@
+# Instincts generated from https://github.com/King-Austin/Smart_Classroom_Attendance
+# Generated: 2026-05-20T09:10:18.742Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Smart_Classroom_Attendance-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, ci
+
+## Evidence
+
+- 7 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat(native): initialize Expo bare-workflow workspace for RN migration, ci: add EAS Build workflow for Android APK
+
+---
+id: Smart_Classroom_Attendance-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Commit Length
+
+## Action
+
+Write moderate-length commit messages (~63 characters)
+
+## Evidence
+
+- Average commit message length: 63 chars
+- Based on 7 commits
+
+---
+id: Smart_Classroom_Attendance-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: Smart_Classroom_Attendance-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: Smart_Classroom_Attendance-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: Smart_Classroom_Attendance-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: Smart_Classroom_Attendance-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: Smart_Classroom_Attendance-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~21x per month
+- Files: native/*, native/src/components/*, native/src/components/dashboard/*
+
+---
+id: Smart_Classroom_Attendance-workflow-add-or-update-react-native-screen-or-component
+trigger: "when doing add or update react native screen or component"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Workflow Add Or Update React Native Screen Or Component
+
+## Action
+
+Follow the add-or-update-react-native-screen-or-component workflow:
+1. Create or update a file in native/src/screens/ or native/src/components/
+2. If it's a screen, add navigation entry in native/src/navigation/ or update navigation types
+3. If needed, update or create associated hooks in native/src/hooks/
+4. Update or create supporting files (e.g., types, constants, theme) as required
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: native/src/screens/*.tsx, native/src/components/**/*.tsx, native/src/navigation/*.tsx
+
+---
+id: Smart_Classroom_Attendance-workflow-ci-android-build-workflow-update
+trigger: "when doing ci android build workflow update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_Classroom_Attendance Workflow Ci Android Build Workflow Update
+
+## Action
+
+Follow the ci-android-build-workflow-update workflow:
+1. Create or update .github/workflows/build-android.yml
+2. Change build steps (e.g., switch from EAS Build to Gradle, update action versions)
+3. Adjust environment variables and secrets as needed
+4. Document any required secrets or build profiles
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: .github/workflows/build-android.yml
+
+---
+id: smart_classroom_attendance-instinct-file-naming
+trigger: "When creating a new file in the codebase"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct File Naming
+
+## Action
+
+Name the file using PascalCase (e.g., MyComponent.tsx)
+
+## Evidence
+
+- Pattern in namingConventions.files: PascalCase
+- Observed in native/src/components/*
+
+---
+id: smart_classroom_attendance-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Function Naming
+
+## Action
+
+Name the function using camelCase (e.g., fetchData)
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: smart_classroom_attendance-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase (e.g., AttendanceManager)
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: smart_classroom_attendance-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., MAX_ATTENDEES)
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: smart_classroom_attendance-instinct-import-alias
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Import Alias
+
+## Action
+
+Use import aliases instead of relative paths
+
+## Evidence
+
+- Pattern in importStyle: alias
+- Observed in native/src/components/*
+
+---
+id: smart_classroom_attendance-instinct-export-named
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Export Named
+
+## Action
+
+Use named exports instead of default exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: smart_classroom_attendance-instinct-try-catch-error-handling
+trigger: "When handling errors in code"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Try Catch Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style: try-catch
+
+---
+id: smart_classroom_attendance-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Test Location
+
+## Action
+
+Place test files in a separate directory from source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
+---
+id: smart_classroom_attendance-instinct-feature-test-sequence
+trigger: "When implementing a new feature"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Feature Test Sequence
+
+## Action
+
+Add tests for the feature after implementation and before documentation
+
+## Evidence
+
+- feature-development workflow: Add tests for feature after implementation
+
+---
+id: smart_classroom_attendance-instinct-commit-format
+trigger: "When making a git commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Commit Format
+
+## Action
+
+Use conventional commits with prefixes like feat or ci, followed by a short scope and colon (e.g., feat(native): ...)
+
+## Evidence
+
+- Pattern in commits.type: conventional
+- Examples: 'feat(native): initialize Expo bare-workflow workspace for RN migration', 'ci: add EAS Build workflow for Android APK'
+
+---
+id: smart_classroom_attendance-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Commit Length
+
+## Action
+
+Keep the commit message concise, around 60-70 characters
+
+## Evidence
+
+- Pattern in commits.averageLength: 63
+
+---
+id: smart_classroom_attendance-instinct-add-update-rn-screen-component
+trigger: "When adding or updating a React Native screen or component"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Add Update Rn Screen Component
+
+## Action
+
+Create or update a file in native/src/screens/ or native/src/components/
+
+## Evidence
+
+- add-or-update-react-native-screen-or-component workflow
+- Files: native/src/screens/*.tsx, native/src/components/**/*.tsx
+
+---
+id: smart_classroom_attendance-instinct-update-navigation-for-screen
+trigger: "When adding a new screen to the React Native app"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Update Navigation For Screen
+
+## Action
+
+Add a navigation entry in native/src/navigation/ or update navigation types
+
+## Evidence
+
+- add-or-update-react-native-screen-or-component workflow step
+- Files: native/src/navigation/*.tsx
+
+---
+id: smart_classroom_attendance-instinct-update-hooks-for-component
+trigger: "When a new screen or component requires additional logic"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Update Hooks For Component
+
+## Action
+
+Update or create associated hooks in native/src/hooks/
+
+## Evidence
+
+- add-or-update-react-native-screen-or-component workflow step
+- Files: native/src/hooks/*.ts
+
+---
+id: smart_classroom_attendance-instinct-update-supporting-files
+trigger: "When adding or updating a screen/component and supporting types/constants are needed"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Update Supporting Files
+
+## Action
+
+Update or create supporting files in native/src/types/ or native/src/constants/
+
+## Evidence
+
+- add-or-update-react-native-screen-or-component workflow step
+- Files: native/src/types/*.ts, native/src/constants/*.ts
+
+---
+id: smart_classroom_attendance-instinct-ci-android-build-workflow-update
+trigger: "When setting up or modifying the Android build CI pipeline"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Ci Android Build Workflow Update
+
+## Action
+
+Create or update .github/workflows/build-android.yml
+
+## Evidence
+
+- ci-android-build-workflow-update workflow
+- Files: .github/workflows/build-android.yml
+
+---
+id: smart_classroom_attendance-instinct-ci-android-switch-build-system
+trigger: "When the Android CI build system needs to be changed (e.g., from EAS Build to Gradle)"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Ci Android Switch Build System
+
+## Action
+
+Change build steps in .github/workflows/build-android.yml accordingly
+
+## Evidence
+
+- ci-android-build-workflow-update workflow step
+- Commits: 'ci: switch Android build to local Gradle (no EAS/Expo account needed)'
+
+---
+id: smart_classroom_attendance-instinct-ci-android-update-actions
+trigger: "When a new Node.js version or GitHub Action deprecation is detected"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Ci Android Update Actions
+
+## Action
+
+Bump action versions in .github/workflows/build-android.yml to latest supported
+
+## Evidence
+
+- ci-android-build-workflow-update workflow step
+- Commit: 'ci: bump all actions to v5 to fix Node.js 20 deprecation warning'
+
+---
+id: smart_classroom_attendance-instinct-ci-android-env-secrets
+trigger: "When environment variables or secrets are required for Android CI builds"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: King-Austin/Smart_Classroom_Attendance
+---
+
+# Smart_classroom_attendance Instinct Ci Android Env Secrets
+
+## Action
+
+Adjust environment variables and secrets in .github/workflows/build-android.yml
+
+## Evidence
+
+- ci-android-build-workflow-update workflow step
+- Pattern in .github/workflows/build-android.yml
+
