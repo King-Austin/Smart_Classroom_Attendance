@@ -47,7 +47,14 @@ export default function AttendanceLedgerScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      // History tab use-case: no specific session selected. Render the
+      // empty state instead of leaving the screen stuck on a spinner.
+      setStudents([]);
+      setSession(null);
+      setLoading(false);
+      return;
+    }
     fetchLedgerData();
   }, [sessionId]);
 

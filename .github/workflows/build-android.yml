@@ -2,7 +2,12 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, claude/review-deployment-readiness-3tEAH]
+    branches: [main]
+    paths:
+      - 'native/**'
+      - '.github/workflows/build-android.yml'
+  pull_request:
+    branches: [main]
     paths:
       - 'native/**'
       - '.github/workflows/build-android.yml'
@@ -19,17 +24,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: native/package-lock.json
 
       - name: Setup Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'

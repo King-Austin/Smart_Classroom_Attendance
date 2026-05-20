@@ -39,7 +39,10 @@ export default function LiveSessionScreen() {
   const [ending, setEnding] = useState(false);
 
   const presentCount = records.filter(
-    (r) => r.status === ATTENDANCE_STATUS.VERIFIED || r.status === 'present'
+    (r) =>
+      r.status === ATTENDANCE_STATUS.VERIFIED ||
+      r.status === ATTENDANCE_STATUS.MANUAL ||
+      r.status === 'present'
   ).length;
   const presentRate = calculatePercentage(presentCount, totalEnrolled);
   const isEnded = session?.status === SESSION_STATUS.ENDED;

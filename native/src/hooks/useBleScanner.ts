@@ -27,9 +27,10 @@ const bleEmitter = new NativeEventEmitter(NativeModules.BleManager);
 /**
  * React hook for student-side BLE central scanning.
  *
- * Scans for the lecturer's BLE advertisement that encodes the session token
- * in the device local name ('Session-XXXX'). Returns RSSI so the caller can
- * apply proximity thresholds (> -80 dBm is considered in-range).
+ * Scans for the lecturer's BLE advertisement and matches the session token's
+ * first 4 characters against the advertisement's manufacturer data bytes
+ * (the broadcaster encodes them as ASCII via `startBleBroadcast`). Returns
+ * RSSI so the caller can apply proximity thresholds (> -80 dBm is in-range).
  *
  * @example
  * const { scan, stopScan, isScanning } = useBleScanner();
@@ -119,7 +120,13 @@ export const useBleScanner = () => {
         foundRef.current = false;
         resolveRef.current = resolve;
 
-        const expectedName = 'Session-' + targetToken.slice(0, 4);
+        const tokenPrefix = targetToken.slice(0, 4);
+        // Expected manufacturer-data bytes (ASCII of token prefix) — matches
+        // what `startBleBroadcast` puts in the advertisement.
+        const expectedBytes: number[] = [];
+        for (let i = 0; i < tokenPrefix.length; i++) {
+          expectedBytes.push(tokenPrefix.charCodeAt(i));
+        }
 
         setIsScanning(true);
 
@@ -138,13 +145,39 @@ export const useBleScanner = () => {
           (peripheral: Peripheral) => {
             if (foundRef.current) return; // already resolved
 
-            const name = peripheral.name ?? '';
+            // react-native-ble-manager exposes raw manufacturer data on
+            // `advertising.manufacturerData.bytes` (Android) or as a
+            // base64 string (iOS). For our Android-only flow, walk the
+            // byte array and look for the token-prefix ASCII sequence.
+            const adv = (peripheral as Peripheral & {
+              advertising?: { manufacturerData?: { bytes?: number[] } };
+            }).advertising;
+            const bytes = adv?.manufacturerData?.bytes;
 
-            if (name === expectedName) {
+            if (!bytes || bytes.length < expectedBytes.length) return;
+
+            // Search for expectedBytes as a contiguous subsequence — the
+            // company-id prefix (2 bytes) may sit in front of the payload.
+            let matched = false;
+            for (let i = 0; i <= bytes.length - expectedBytes.length; i++) {
+              let ok = true;
+              for (let j = 0; j < expectedBytes.length; j++) {
+                if (bytes[i + j] !== expectedBytes[j]) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) {
+                matched = true;
+                break;
+              }
+            }
+
+            if (matched) {
               foundRef.current = true;
 
               console.log(
-                `[useBleScanner] Found "${name}" with RSSI ${peripheral.rssi}`
+                `[useBleScanner] Matched token prefix "${tokenPrefix}" with RSSI ${peripheral.rssi}`
               );
 
               cleanup();
@@ -162,7 +195,7 @@ export const useBleScanner = () => {
         timeoutRef.current = setTimeout(() => {
           if (foundRef.current) return; // already resolved by the listener
 
-          console.log(`[useBleScanner] Scan timed out — "${expectedName}" not found`);
+          console.log(`[useBleScanner] Scan timed out — "${tokenPrefix}" not found`);
           cleanup();
           BleManager.stopScan().catch(() => {});
 
