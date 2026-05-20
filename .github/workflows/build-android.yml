@@ -1,1 +1,76 @@
-name: Build Android&#10;&#10;on:&#10;  push:&#10;    branches: [ main, master ]&#10;  pull_request:&#10;    branches: [ main, master ]&#10;&#10;env:&#10;  NODE_VERSION: '20'&#10;&#10;jobs:&#10;  build:&#10;    runs-on: ubuntu-latest&#10;    steps:&#10;      - name: Checkout code&#10;        uses: actions/checkout@v4&#10;&#10;      - name: Setup Node.js&#10;        uses: actions/setup-node@v4&#10;        with:&#10;          node-version: ${{ env.NODE_VERSION }}&#10;          cache: 'npm'&#10;&#10;      - name: Setup Java&#10;        uses: actions/setup-java@v4&#10;        with:&#10;          distribution: 'temurin'&#10;          java-version: '17'&#10;&#10;      - name: Install dependencies&#10;        run: npm ci&#10;&#10;      - name: Build web assets&#10;        run: npm run build&#10;&#10;      - name: Setup Capacitor&#10;        run: npx cap sync android&#10;&#10;      - name: Build Android APK (debug)&#10;        run: |&#10;          cd android&#10;          ./gradlew assembleDebug&#10;&#10;      - name: Build Android AAB (release unsigned)&#10;        run: |&#10;          cd android&#10;          ./gradlew bundleRelease&#10;&#10;      - name: Upload APK&#10;        uses: actions/upload-artifact@v4&#10;        with:&#10;          name: android-debug-apk&#10;          path: android/app/build/outputs/apk/debug/app-debug.apk&#10;&#10;      - name: Upload AAB&#10;        uses: actions/upload-artifact@v4&#10;        with:&#10;          name: android-release-aab&#10;          path: android/app/build/outputs/bundle/release/app-release.aab&#10;
+name: Build Android
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_VERSION: '20.19.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Expose Node runtime for Gradle subprocesses
+        run: |
+          echo "NODE_BINARY=$(command -v node)" >> "$GITHUB_ENV"
+          echo "NODE_BIN_DIR=$(dirname \"$(command -v node)\")" >> "$GITHUB_ENV"
+          node --version
+          npm --version
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Setup Capacitor
+        run: npx cap sync android
+
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android APK (debug)
+        env:
+          PATH: ${{ env.NODE_BIN_DIR }}:${{ env.PATH }}
+          NODE_BINARY: ${{ env.NODE_BINARY }}
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Build Android AAB (release unsigned)
+        env:
+          PATH: ${{ env.NODE_BIN_DIR }}:${{ env.PATH }}
+          NODE_BINARY: ${{ env.NODE_BINARY }}
+        run: |
+          cd android
+          ./gradlew bundleRelease --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
