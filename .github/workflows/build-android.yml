@@ -39,19 +39,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Diagnostics
-        working-directory: native
-        run: |
-          set -x
-          node --version
-          npm --version
-          npm config get legacy-peer-deps
-          ls -la
-          cat .npmrc || echo "no .npmrc"
-
       - name: Install native deps
         working-directory: native
-        run: npm ci --verbose 2>&1 | tail -40
+        run: npm ci
 
       - name: TypeScript check
         working-directory: native
