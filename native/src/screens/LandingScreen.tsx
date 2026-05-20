@@ -49,7 +49,7 @@ function GlowBlob({ color, size, style, delay = 0 }: GlowProps) {
     opacity.value = withDelay(
       delay,
       withRepeat(
-        withTiming(0.32, { duration: 2800, easing: Easing.inOut(Easing.sine) }),
+        withTiming(0.32, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
         -1,
         true,
       ),

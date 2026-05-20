@@ -69,7 +69,7 @@ export const useBleScanner = () => {
   useEffect(() => {
     return () => {
       cleanup();
-      BleManager.stopScan().catch(err =>
+      BleManager.stopScan().catch((err: unknown) =>
         console.warn('[useBleScanner] Cleanup stopScan failed:', err)
       );
     };
@@ -81,7 +81,7 @@ export const useBleScanner = () => {
 
   const stopScan = useCallback(() => {
     cleanup();
-    BleManager.stopScan().catch(err =>
+    BleManager.stopScan().catch((err: unknown) =>
       console.warn('[useBleScanner] stopScan failed:', err)
     );
     // Resolve any in-flight scan promise with "not found"
@@ -174,7 +174,11 @@ export const useBleScanner = () => {
 
         try {
           // Scan for our specific service UUID; allowDuplicates=false reduces noise
-          await BleManager.scan([SERVICE_UUID], 10, false);
+          await BleManager.scan({
+            serviceUUIDs: [SERVICE_UUID],
+            seconds: 10,
+            allowDuplicates: false,
+          });
         } catch (err) {
           console.error('[useBleScanner] BleManager.scan() failed:', err);
           cleanup();

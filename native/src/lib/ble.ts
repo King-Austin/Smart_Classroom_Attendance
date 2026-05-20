@@ -50,18 +50,25 @@ export const startBleBroadcast = async (
   }
 
   try {
+    // Encode first 4 chars of token as ASCII bytes in manufacturer data so
+    // student scanners can match the broadcast without GATT service discovery.
+    const tokenPrefix = token.slice(0, 4);
+    const manufData: number[] = [];
+    for (let i = 0; i < tokenPrefix.length; i++) {
+      manufData.push(tokenPrefix.charCodeAt(i));
+    }
+
     await BLEAdvertiser.broadcast(
       SERVICE_UUID,
-      [TOKEN_CHARACTERISTIC_UUID],
+      manufData,
       {
         includeDeviceName: false,
-        localName: 'Session-' + token.slice(0, 4),
-        txPowerLevel: 'ULTRA_LOW',
+        connectable: false,
       }
     );
 
     _state = { isAdvertising: true };
-    console.log(`[BLE] Broadcasting session ${sessionId} with token prefix ${token.slice(0, 4)}`);
+    console.log(`[BLE] Broadcasting session ${sessionId} with token prefix ${tokenPrefix}`);
     return true;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

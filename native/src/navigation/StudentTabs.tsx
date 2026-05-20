@@ -69,17 +69,9 @@ function HistoryIcon({ color, size }: TabIconProps) {
 // ---------------------------------------------------------------------------
 
 function HistoryTabScreen() {
-  // AttendanceLedgerScreen is rendered directly; sessionId is undefined which
-  // signals "full history mode" to the screen implementation.
   return (
     <View style={styles.fill}>
-      <AttendanceLedgerScreen
-        // The screen will receive navigation & route from the tab navigator.
-        // We cast here because we're embedding it without a stack wrapper;
-        // the screen must handle an absent sessionId gracefully.
-        route={{ key: 'History', name: 'AttendanceLedger', params: { sessionId: undefined } } as any}
-        navigation={undefined as any}
-      />
+      <AttendanceLedgerScreen />
     </View>
   );
 }

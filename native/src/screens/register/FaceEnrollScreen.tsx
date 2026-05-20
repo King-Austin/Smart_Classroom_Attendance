@@ -28,7 +28,7 @@ import { useBiometrics } from '@/hooks/useBiometrics';
 import { toast } from '@/lib/toast';
 import { Colors } from '@/theme/colors';
 import type { RegisterStackParamList } from '@/navigation/types';
-import CameraCapture from '@/components/verification/CameraCapture';
+import { CameraCapture } from '@/components/verification/CameraCapture';
 
 // ---------------------------------------------------------------------------
 // Navigation / route types

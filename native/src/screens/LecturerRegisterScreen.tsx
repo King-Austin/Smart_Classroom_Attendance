@@ -1,9 +1,9 @@
 /**
- * Smart Campus Presence — BasicInfoScreen (Student Registration Step 1)
+ * Smart Campus Presence — LecturerRegisterScreen
  *
- * Collects personal and academic info via controlled TextInputs.
- * Validates inline and navigates to CourseSelectScreen passing all form
- * data as route params.
+ * Single-step registration for lecturers. Collects personal and academic info,
+ * signs up via Supabase auth, inserts a `profiles` row with role='lecturer',
+ * then the RootNavigator auth-state listener redirects to LecturerTabs.
  */
 import React, { useState } from 'react';
 import {
@@ -24,26 +24,28 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Input } from '@/components/ui';
 import { Button } from '@/components/ui';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast';
 import { Colors } from '@/theme/colors';
 import {
   FACULTIES,
   DEPARTMENTS,
-  LEVELS,
-  SEMESTERS,
   DEFAULT_FACULTY,
   DEFAULT_DEPARTMENT,
 } from '@/constants';
-import type { RegisterStackParamList } from '@/navigation/types';
+import type { AuthStackParamList } from '@/navigation/types';
 
 // ---------------------------------------------------------------------------
 // Navigation type
 // ---------------------------------------------------------------------------
 
-type BasicInfoNav = NativeStackNavigationProp<RegisterStackParamList, 'BasicInfo'>;
+type LecturerRegisterNav = NativeStackNavigationProp<
+  AuthStackParamList,
+  'LecturerRegister'
+>;
 
 // ---------------------------------------------------------------------------
-// Reusable modal-based picker
+// Inline picker (same pattern as BasicInfoScreen, no shared component needed)
 // ---------------------------------------------------------------------------
 
 interface PickerFieldProps {
@@ -132,62 +134,76 @@ function PickerField({
 // Screen
 // ---------------------------------------------------------------------------
 
-export default function BasicInfoScreen() {
-  const navigation = useNavigation<BasicInfoNav>();
+export default function LecturerRegisterScreen() {
+  const navigation = useNavigation<LecturerRegisterNav>();
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [regNumber, setRegNumber] = useState('');
-  const [faculty, setFaculty] = useState(DEFAULT_FACULTY);
-  const [department, setDepartment] = useState(DEFAULT_DEPARTMENT);
-  const [level, setLevel] = useState('');
-  const [semester, setSemester] = useState('');
+  const [form, setForm] = useState({
+    fullName: '',
+    staffId: '',
+    email: '',
+    password: '',
+    faculty: DEFAULT_FACULTY,
+    department: DEFAULT_DEPARTMENT,
+  });
+  const [loading, setLoading] = useState(false);
 
-  const handleNext = () => {
-    if (!fullName.trim()) {
+  const update = (key: keyof typeof form, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async () => {
+    // Basic client-side validation
+    if (!form.fullName.trim()) {
       toast.error('Full name is required.');
       return;
     }
-    if (!regNumber.trim()) {
-      toast.error('Registration number is required.');
+    if (!form.staffId.trim()) {
+      toast.error('Staff ID is required.');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      toast.error('Enter a valid email address.');
+    if (!form.email.trim()) {
+      toast.error('Email address is required.');
       return;
     }
-    if (password.length < 6) {
+    if (form.password.length < 6) {
       toast.error('Password must be at least 6 characters.');
       return;
     }
-    if (!faculty) {
-      toast.error('Please select your faculty.');
-      return;
-    }
-    if (!department) {
-      toast.error('Please select your department.');
-      return;
-    }
-    if (!level) {
-      toast.error('Please select your level.');
-      return;
-    }
-    if (!semester) {
-      toast.error('Please select your semester.');
+    if (!form.faculty || !form.department) {
+      toast.error('Please select your faculty and department.');
       return;
     }
 
-    navigation.navigate('CourseSelect', {
-      fullName: fullName.trim(),
-      email: email.trim(),
-      password,
-      regNumber: regNumber.trim(),
-      faculty,
-      department,
-      level,
-      semester,
-    });
+    setLoading(true);
+    try {
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Account creation failed. Please try again.');
+
+      // 2. Insert profile
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: authData.user.id,
+        full_name: form.fullName.trim(),
+        staff_id: form.staffId.trim(),
+        role: 'lecturer',
+        faculty: form.faculty,
+        department: form.department,
+      });
+
+      if (profileError) throw profileError;
+
+      toast.success('Registration successful! Welcome aboard.');
+      // RootNavigator will detect the new session and route to LecturerTabs
+    } catch (error: any) {
+      console.error('LecturerRegister error:', error);
+      toast.error(error?.message ?? 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -205,12 +221,6 @@ export default function BasicInfoScreen() {
             <Text style={styles.backIcon}>←</Text>
             <Text style={styles.backLabel}>Back</Text>
           </Pressable>
-          <Text style={styles.stepLabel}>Step 1 of 3</Text>
-        </View>
-
-        {/* Progress bar */}
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: '33%' }]} />
         </View>
 
         <ScrollView
@@ -218,33 +228,33 @@ export default function BasicInfoScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Personal Info</Text>
-          <Text style={styles.subtitle}>Let's get you registered</Text>
+          <Text style={styles.title}>Lecturer Registration</Text>
+          <Text style={styles.subtitle}>Set up your lecturer account</Text>
 
           <View style={styles.form}>
             <Input
               label="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="John Doe"
+              value={form.fullName}
+              onChangeText={(v) => update('fullName', v)}
+              placeholder="Dr. Jane Smith"
               autoCapitalize="words"
               returnKeyType="next"
             />
 
             <Input
-              label="Registration Number"
-              value={regNumber}
-              onChangeText={setRegNumber}
-              placeholder="2021364001"
-              autoCapitalize="none"
+              label="Staff ID"
+              value={form.staffId}
+              onChangeText={(v) => update('staffId', v)}
+              placeholder="STAFF/2024/001"
+              autoCapitalize="characters"
               returnKeyType="next"
             />
 
             <Input
               label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="john@university.edu"
+              value={form.email}
+              onChangeText={(v) => update('email', v)}
+              placeholder="jane@university.edu"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -253,61 +263,55 @@ export default function BasicInfoScreen() {
 
             <Input
               label="Password"
-              value={password}
-              onChangeText={setPassword}
+              value={form.password}
+              onChangeText={(v) => update('password', v)}
               placeholder="••••••••"
               secureTextEntry
               autoCapitalize="none"
               returnKeyType="done"
+              onSubmitEditing={handleSubmit}
             />
 
-            {/* Faculty picker */}
             <PickerField
               label="Faculty"
-              value={faculty}
+              value={form.faculty}
               options={FACULTIES}
               placeholder="Select faculty"
               onSelect={(v) => {
-                setFaculty(v);
-                setDepartment('');
+                update('faculty', v);
+                update('department', '');
               }}
             />
 
-            {/* Department picker — depends on faculty */}
-            <PickerField
-              label="Department"
-              value={department}
-              options={DEPARTMENTS[faculty] ?? []}
-              placeholder="Select department"
-              onSelect={setDepartment}
-              disabled={!faculty}
-            />
+            {form.faculty ? (
+              <PickerField
+                label="Department"
+                value={form.department}
+                options={DEPARTMENTS[form.faculty] ?? []}
+                placeholder="Select department"
+                onSelect={(v) => update('department', v)}
+              />
+            ) : null}
 
-            {/* Level + Semester in a row */}
-            <View style={styles.row}>
-              <View style={styles.rowItem}>
-                <PickerField
-                  label="Level"
-                  value={level}
-                  options={LEVELS}
-                  placeholder="Level"
-                  onSelect={setLevel}
-                />
-              </View>
-              <View style={styles.rowItem}>
-                <PickerField
-                  label="Semester"
-                  value={semester}
-                  options={SEMESTERS}
-                  placeholder="Semester"
-                  onSelect={setSemester}
-                />
-              </View>
-            </View>
-
-            <Button onPress={handleNext} size="lg">
-              Next  →
+            <Button
+              onPress={handleSubmit}
+              loading={loading}
+              disabled={loading}
+              size="lg"
+            >
+              Create Account
             </Button>
+
+            {/* Sign-in link */}
+            <Pressable
+              onPress={() => navigation.navigate('Login')}
+              style={({ pressed }) => [styles.signInLink, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={styles.signInText}>
+                Already have an account?{' '}
+                <Text style={styles.signInAccent}>Sign In</Text>
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -325,9 +329,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
@@ -335,6 +336,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    alignSelf: 'flex-start',
   },
   backIcon: {
     fontSize: 18,
@@ -345,27 +347,10 @@ const styles = StyleSheet.create({
     color: Colors.mutedForeground,
     fontWeight: '500',
   },
-  stepLabel: {
-    fontSize: 12,
-    color: Colors.mutedForeground,
-    fontWeight: '600',
-  },
-  progressTrack: {
-    height: 3,
-    backgroundColor: Colors.muted,
-    marginHorizontal: 20,
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.accent,
-    borderRadius: 2,
-  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 48,
     maxWidth: 480,
     width: '100%',
@@ -413,14 +398,22 @@ const styles = StyleSheet.create({
     color: Colors.mutedForeground,
     marginLeft: 8,
   },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
+  signInLink: {
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginTop: 4,
   },
-  rowItem: {
-    flex: 1,
+  signInText: {
+    fontSize: 13,
+    color: Colors.mutedForeground,
+    fontWeight: '500',
   },
-  // Modal styles
+  signInAccent: {
+    color: Colors.accent,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',
@@ -432,7 +425,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingTop: 20,
     paddingBottom: 40,
-    maxHeight: '70%',
+    maxHeight: '60%',
   },
   modalTitle: {
     fontSize: 16,

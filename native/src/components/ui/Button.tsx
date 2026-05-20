@@ -5,6 +5,7 @@ import {
   Text,
   View,
   type PressableProps,
+  type ViewStyle,
 } from 'react-native';
 import { Colors } from '@/theme/colors';
 
@@ -16,6 +17,7 @@ export interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  style?: ViewStyle;
 }
 
 type SizeConfig = {
@@ -107,6 +109,7 @@ export function Button({
   disabled = false,
   loading = false,
   className,
+  style,
 }: ButtonProps) {
   const sizeConfig = SIZE_CONFIG[size];
   const isDisabled = disabled || loading;
@@ -127,6 +130,7 @@ export function Button({
           paddingHorizontal: sizeConfig.paddingHorizontal,
           minHeight: sizeConfig.minHeight,
           ...variantStyle.container,
+          ...style,
         };
       }}
     >

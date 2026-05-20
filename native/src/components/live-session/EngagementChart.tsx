@@ -1,172 +1,104 @@
 /**
  * Smart Campus Presence — EngagementChart (Live Session)
  *
- * Groups attendance records into 5-minute buckets and renders a cumulative
- * VictoryArea chart (cyan fill + line) on a dark card background.
+ * Renders a simple cumulative attendance line by bucketing records into
+ * 5-minute intervals. Uses a lightweight SVG-based sparkline (no chart
+ * library required — victory-native v41 needs Skia which adds substantial
+ * native dependencies).
  *
  * Props: { records: AttendanceRecordWithProfile[] }
  */
 import React, { useMemo } from 'react';
 import { View, Text, Dimensions } from 'react-native';
-import {
-  VictoryChart,
-  VictoryArea,
-  VictoryAxis,
-} from 'victory-native';
+import Svg, { Polyline, Line as SvgLine } from 'react-native-svg';
 import { Colors } from '@/theme/colors';
 import { AttendanceRecordWithProfile } from '@/types';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-interface ChartPoint {
-  x: string;
-  y: number;
-}
-
-function buildChartData(records: AttendanceRecordWithProfile[]): ChartPoint[] {
-  if (records.length === 0) return [];
-
-  // Sort ascending by timestamp
-  const sorted = [...records].sort(
-    (a, b) =>
-      new Date(a.created_at ?? 0).getTime() -
-      new Date(b.created_at ?? 0).getTime(),
-  );
-
-  // Bucket into 5-minute intervals keyed by "HH:MM" (rounded down)
-  const buckets = new Map<string, number>();
-  for (const r of sorted) {
-    const d = new Date(r.created_at ?? Date.now());
-    const roundedMin = Math.floor(d.getMinutes() / 5) * 5;
-    const key = `${String(d.getHours()).padStart(2, '0')}:${String(roundedMin).padStart(2, '0')}`;
-    buckets.set(key, (buckets.get(key) ?? 0) + 1);
-  }
-
-  // Convert to cumulative data
-  const points: ChartPoint[] = [];
-  let cumulative = 0;
-  for (const [x, count] of buckets.entries()) {
-    cumulative += count;
-    points.push({ x, y: cumulative });
-  }
-
-  return points;
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 interface EngagementChartProps {
   records: AttendanceRecordWithProfile[];
 }
 
-const CHART_WIDTH = Dimensions.get('window').width - 48; // 24px padding each side
+const CHART_HEIGHT = 140;
+const HORIZONTAL_PADDING = 32;
 
-export function EngagementChart({ records }: EngagementChartProps) {
-  const data = useMemo(() => buildChartData(records), [records]);
+export const EngagementChart = ({ records }: EngagementChartProps) => {
+  const points = useMemo(() => {
+    if (records.length === 0) return [] as { x: number; y: number }[];
+
+    const sorted = [...records].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+
+    const startTs = new Date(sorted[0].created_at).getTime();
+    const endTs = new Date(sorted[sorted.length - 1].created_at).getTime();
+    const spanMs = Math.max(endTs - startTs, 5 * 60_000);
+
+    return sorted.map((r, i) => {
+      const ts = new Date(r.created_at).getTime();
+      return {
+        x: (ts - startTs) / spanMs,
+        y: (i + 1) / sorted.length,
+      };
+    });
+  }, [records]);
+
+  const width = Dimensions.get('window').width - HORIZONTAL_PADDING * 2;
 
   return (
     <View
       style={{
-        borderRadius: 24,
         backgroundColor: Colors.card,
         borderWidth: 1,
         borderColor: Colors.border,
+        borderRadius: 16,
+        padding: 16,
         marginBottom: 16,
-        paddingTop: 16,
-        paddingBottom: 4,
-        paddingHorizontal: 4,
-        overflow: 'hidden',
       }}
     >
-      {/* Header */}
       <Text
         style={{
           fontSize: 10,
-          fontWeight: '800',
-          color: Colors.mutedForeground,
+          fontWeight: '700',
+          color: Colors.accent,
           textTransform: 'uppercase',
-          letterSpacing: 2,
-          opacity: 0.75,
-          marginBottom: 4,
-          paddingHorizontal: 12,
+          letterSpacing: 1.5,
+          marginBottom: 12,
         }}
       >
-        Attendance Trend
+        Engagement Over Time
       </Text>
 
-      {data.length < 2 ? (
-        /* Not enough data yet */
-        <View
-          style={{
-            height: 100,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: '700',
-              color: Colors.mutedForeground,
-              opacity: 0.45,
-              textTransform: 'uppercase',
-              letterSpacing: 1.5,
-            }}
-          >
-            {records.length === 0 ? 'No data yet' : 'Collecting data…'}
+      {points.length < 2 ? (
+        <View style={{ height: CHART_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: Colors.mutedForeground, fontSize: 11 }}>
+            Waiting for attendance data…
           </Text>
         </View>
       ) : (
-        <VictoryChart
-          width={CHART_WIDTH}
-          height={140}
-          padding={{ top: 10, bottom: 30, left: 36, right: 16 }}
-        >
-          <VictoryAxis
-            style={{
-              axis: { stroke: Colors.border },
-              tickLabels: {
-                fontSize: 8,
-                fill: Colors.mutedForeground,
-                fontWeight: '600' as any,
-              },
-              grid: { stroke: 'transparent' },
-            }}
+        <Svg width={width} height={CHART_HEIGHT}>
+          {[0.25, 0.5, 0.75].map((t) => (
+            <SvgLine
+              key={t}
+              x1={0}
+              x2={width}
+              y1={CHART_HEIGHT * t}
+              y2={CHART_HEIGHT * t}
+              stroke={Colors.border}
+              strokeOpacity={0.4}
+              strokeWidth={1}
+              strokeDasharray="3,4"
+            />
+          ))}
+          <Polyline
+            points={points
+              .map((p) => `${p.x * width},${CHART_HEIGHT - p.y * CHART_HEIGHT}`)
+              .join(' ')}
+            fill="none"
+            stroke={Colors.accent}
+            strokeWidth={2.5}
           />
-          <VictoryAxis
-            dependentAxis
-            style={{
-              axis: { stroke: Colors.border },
-              tickLabels: {
-                fontSize: 8,
-                fill: Colors.mutedForeground,
-                fontWeight: '600' as any,
-              },
-              grid: {
-                stroke: Colors.border,
-                strokeDasharray: '4,4',
-                opacity: 0.5,
-              },
-            }}
-            tickFormat={(t: number) => Math.round(t).toString()}
-          />
-          <VictoryArea
-            data={data}
-            interpolation="monotoneX"
-            style={{
-              data: {
-                fill: 'rgba(0,229,255,0.12)',
-                stroke: Colors.accent,
-                strokeWidth: 2,
-              },
-            }}
-          />
-        </VictoryChart>
+        </Svg>
       )}
     </View>
   );
-}
+};
