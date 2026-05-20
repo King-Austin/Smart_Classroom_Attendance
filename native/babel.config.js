@@ -3,9 +3,9 @@ module.exports = function (api) {
   return {
     presets: [
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
+      "nativewind/babel",
     ],
     plugins: [
-      "nativewind/babel",
       [
         "module-resolver",
         {
@@ -13,7 +13,22 @@ module.exports = function (api) {
           alias: {
             "@": "./src",
           },
-          extensions: [".ios.js", ".android.js", ".js", ".jsx", ".ts", ".tsx", ".json"],
+          extensions: [
+            ".web.ts",
+            ".web.tsx",
+            ".ios.ts",
+            ".ios.tsx",
+            ".android.ts",
+            ".android.tsx",
+            ".ts",
+            ".tsx",
+            ".web.js",
+            ".ios.js",
+            ".android.js",
+            ".js",
+            ".jsx",
+            ".json",
+          ],
         },
       ],
       "react-native-reanimated/plugin", // must be last
