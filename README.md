@@ -35,7 +35,7 @@
 
 The project uses a high-performance **InsightFace** implementation deployed on Railway.
 
-- **Primary Endpoint**: `https://smartclassroomattendance.up.railway.app`
+- **Primary Endpoint**: `https://smart-attendance-ivory.vercel.app/`
 - **Core Logic**: Stateless face vectorization (512-dim embeddings) and similarity scoring.
 
 ---
