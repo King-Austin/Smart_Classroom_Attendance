@@ -152,7 +152,7 @@ The Settings screen exposes the full identity stack to the student. Face Enrollm
 The face recognition pipeline runs on a dedicated **InsightFace** service deployed on Railway:
 
 ```
-https://smartclassroomattendance.up.railway.app
+https://smart-attendance-ivory.vercel.app/
 ```
 
 The service is **stateless** — it receives an image frame, returns a 512-dimensional float vector, and stores nothing. All vector storage and similarity queries run inside Supabase using the `pgvector` extension. Cosine similarity thresholds are tuned per deployment to balance false acceptance rate (FAR) against false rejection rate (FRR).
